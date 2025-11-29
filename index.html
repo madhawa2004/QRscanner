@@ -4,43 +4,35 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Scout System Login</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
-    
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
     <style>
-        body {
-            background-color: #ffffff; height: 100vh; display: flex; align-items: center; justify-content: center;
-            font-family: 'Segoe UI', sans-serif; color: #333;
-        }
-        .login-card {
-            background: #ffffff; width: 100%; max-width: 480px; padding: 50px 40px;
-            border-radius: 20px; box-shadow: 0 15px 50px rgba(0, 0, 0, 0.1); text-align: center; border: 1px solid #f0f0f0;
-        }
-        .scout-logo { font-size: 70px; margin-bottom: 10px; display: inline-block; color: #6c5ce7; }
-        .form-control {
-            background: #f8f9fa; border: 2px solid #e9ecef; border-radius: 12px;
-            padding: 15px 20px; height: 60px; font-size: 1.1rem; margin-bottom: 20px;
-        }
-        .form-control:focus { border-color: #6c5ce7; box-shadow: none; background: #fff; }
-        .btn-login {
-            background: #6c5ce7; color: #fff; border-radius: 12px; padding: 15px;
-            height: 60px; width: 100%; font-size: 1.2rem; font-weight: 600; border: none; transition: all 0.3s;
-        }
-        .btn-login:hover { background: #5649c0; transform: translateY(-2px); }
+        body { background: #f8f9fa; height: 100vh; display: flex; align-items: center; justify-content: center; font-family: 'Poppins', sans-serif; }
+        .login-card { background: white; width: 100%; max-width: 420px; padding: 40px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.08); text-align: center; }
+        .logo { font-size: 60px; color: #6c5ce7; margin-bottom: 20px; }
+        .form-control { background: #f1f5f9; border: none; padding: 15px; border-radius: 12px; margin-bottom: 15px; }
+        .btn-login { background: #6c5ce7; color: white; width: 100%; padding: 15px; border-radius: 12px; border:none; font-weight: 600; transition: 0.3s; }
+        .btn-login:hover { background: #5b4bc4; transform: translateY(-2px); }
+        .btn-parent { border: 2px solid #6c5ce7; color: #6c5ce7; width: 100%; padding: 12px; border-radius: 12px; font-weight: 600; text-decoration: none; display: block; margin-top: 20px; transition: 0.3s; }
+        .btn-parent:hover { background: #6c5ce7; color: white; }
     </style>
 </head>
 <body>
 
 <div class="login-card animate__animated animate__fadeInUp">
-    <div class="scout-logo animate__animated animate__pulse animate__infinite">⚜️</div>
-    <h3 class="fw-bold mb-1">Welcome Back</h3>
-    <p class="text-muted mb-4">Scout Command Center</p>
+    <div class="logo">⚜️</div>
+    <h3 class="fw-bold mb-1">Scout Command</h3>
+    <p class="text-muted mb-4">System v4.0 (Hybrid)</p>
     
-    <input type="email" id="email" class="form-control" placeholder="name@scout.com">
-    <input type="password" id="password" class="form-control" placeholder="••••••••">
+    <input type="email" id="email" class="form-control" placeholder="Staff Email">
+    <input type="password" id="password" class="form-control" placeholder="Password">
     
-    <button onclick="login()" class="btn btn-login">Secure Login</button>
-    <div class="mt-4 text-muted small">System v3.0 • 2025</div>
+    <button onclick="login()" class="btn-login shadow-sm">SECURE LOGIN</button>
+    
+    <a href="parents.html" class="btn-parent">
+        <i class="bi bi-people-fill me-2"></i> Access Parent Portal
+    </a>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
@@ -49,64 +41,45 @@
     import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
     import { getAuth, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
-    // 🔴 YOUR CONFIG HERE
+    // 🔴 CONFIG WITH NEW RTDB URL
     const firebaseConfig = {
         apiKey: "AIzaSyBsBsKnXv6FgYVk7OLo0XagFSBZgYajuNA",
         authDomain: "qr-system-02---web-based.firebaseapp.com",
         projectId: "qr-system-02---web-based",
         storageBucket: "qr-system-02---web-based.firebasestorage.app",
         messagingSenderId: "742559334366",
-        appId: "1:742559334366:web:0c104f39997de0572fe74f"
+        appId: "1:742559334366:web:0c104f39997de0572fe74f",
+        databaseURL: "https://qr-system-02---web-based-default-rtdb.asia-southeast1.firebasedatabase.app/"
     };
 
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
     const auth = getAuth(app);
 
-    window.login = async function() {
+    window.login = async () => {
         const e = document.getElementById('email').value;
         const p = document.getElementById('password').value;
+        
+        if(!e || !p) return Swal.fire('Error','Please enter email and password','warning');
+        
         const btn = document.querySelector('.btn-login');
-
-        if(!e || !p) return Swal.fire('Missing Data', 'Please enter email & password', 'warning');
-
-        btn.innerHTML = 'Checking Permissions...';
-        btn.disabled = true;
-
+        btn.innerText = "Authenticating...";
+        
         try {
-            // 1. Authenticate
-            const userCredential = await signInWithEmailAndPassword(auth, e, p);
-            const user = userCredential.user;
-
-            // 2. Check Role in Database
-            const docRef = doc(db, "users", user.email);
-            const docSnap = await getDoc(docRef);
-
-            if (docSnap.exists()) {
+            const uc = await signInWithEmailAndPassword(auth, e, p);
+            const docSnap = await getDoc(doc(db, "users", uc.user.email));
+            
+            if(docSnap.exists()) {
                 const role = docSnap.data().role;
-                
-                Swal.fire({
-                    icon: 'success', 
-                    title: `Welcome, ${role.toUpperCase()}`, 
-                    timer: 1000, 
-                    showConfirmButton: false
-                }).then(() => {
-                    // 3. Redirect based on Role
-                    if(role === 'scanner') {
-                        window.location.href = "scanner.html"; // Phone UI
-                    } else {
-                        window.location.href = "dashboard.html"; // Admin/Mod UI
-                    }
-                });
-
+                window.location.href = role === 'scanner' ? "scanner.html" : "dashboard.html";
             } else {
-                throw new Error("User role not found! Contact Admin.");
+                // If role doc is missing but auth works, assume admin or error
+                Swal.fire('Error', 'Role not assigned in Database. Contact Admin.', 'error');
+                btn.innerText = "SECURE LOGIN";
             }
-
-        } catch (error) {
-            btn.innerHTML = 'Secure Login';
-            btn.disabled = false;
-            Swal.fire('Access Denied', error.message, 'error');
+        } catch(err) { 
+            Swal.fire('Access Denied', err.message, 'error'); 
+            btn.innerText = "SECURE LOGIN";
         }
     }
 </script>
