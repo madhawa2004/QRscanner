@@ -11,10 +11,9 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
     
     <style>
-        /* --- MAIN THEME (MATCHING IMAGE) --- */
+        /* --- MAIN THEME --- */
         body { background-color: #f3f4f6; font-family: 'Inter', sans-serif; height: 100vh; overflow: hidden; margin: 0; }
         
-        /* Screen Container */
         .screen {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
             display: none; flex-direction: column; 
@@ -22,17 +21,25 @@
         }
         .screen.active { display: flex; }
 
-        /* --- 1. HOME SCREEN --- */
+        /* --- HOME SCREEN --- */
         .header-text { text-align: center; color: #007bff; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; margin-top: 20px; margin-bottom: 20px; }
         
         .camera-box {
-            background-color: #1a1e21; border-radius: 20px; width: 100%; aspect-ratio: 1/1; 
+            background-color: #000; border-radius: 20px; width: 100%; aspect-ratio: 1/1; 
             overflow: hidden; position: relative; margin-bottom: 20px; border: 4px solid #fff;
             box-shadow: 0 10px 30px rgba(0,0,0,0.1);
             display: flex; align-items: center; justify-content: center;
         }
-        .camera-placeholder { color: #495057; font-size: 4rem; }
+        
+        /* 🔥 FIX: Clean Camera View (No Box) */
         #reader { width: 100%; height: 100%; object-fit: cover; }
+        #reader video { object-fit: cover; width: 100% !important; height: 100% !important; border-radius: 16px; }
+        
+        /* Hides the library generated box overlays */
+        #reader__scan_region { display: none !important; }
+        #reader div { box-shadow: none !important; border: none !important; }
+
+        .camera-placeholder { color: #495057; font-size: 4rem; position: absolute; z-index: 0; }
 
         .input-group-custom {
             background: #fff; padding: 20px; border-radius: 20px; margin-bottom: 20px;
@@ -47,15 +54,14 @@
         .btn-scan {
             width: 100%; background-color: #007bff; color: white; border: none; padding: 18px;
             font-size: 1.1rem; font-weight: 700; border-radius: 15px; letter-spacing: 1px;
-            box-shadow: 0 8px 20px rgba(0, 123, 255, 0.3); margin-top: auto;
+            box-shadow: 0 8px 20px rgba(0, 123, 255, 0.3); margin-top: auto; z-index: 10;
         }
         .btn-scan:active { transform: scale(0.98); }
         .btn-scan.stop { background-color: #dc3545; box-shadow: 0 8px 20px rgba(220, 53, 69, 0.3); }
 
-        /* --- 2. DETAILS SCREEN --- */
+        /* --- DETAILS SCREEN --- */
         .details-header { display: flex; align-items: center; margin-bottom: 20px; }
         .btn-back { border: none; background: transparent; font-size: 1.5rem; color: #333; }
-        
         .profile-container { text-align: center; margin-bottom: 30px; }
         .avatar-circle {
             width: 100px; height: 100px; background: #e2e8f0; border-radius: 50%;
@@ -65,7 +71,6 @@
         .scout-name { font-size: 1.4rem; font-weight: 700; color: #1e293b; margin: 0; }
         .scout-id { color: #64748b; font-size: 0.9rem; font-weight: 500; margin-bottom: 5px; }
         .scout-troop { color: #94a3b8; font-size: 0.85rem; }
-
         .action-container { display: flex; flex-direction: column; gap: 12px; }
         .btn-action {
             width: 100%; padding: 16px; border-radius: 50px; font-weight: 700; font-size: 1rem;
@@ -75,7 +80,7 @@
         .btn-action.primary { background: #007bff; color: white; box-shadow: 0 5px 15px rgba(0, 123, 255, 0.2); }
         .btn-cancel { background: transparent; color: #94a3b8; border: none; margin-top: 15px; font-weight: 600; }
 
-        /* --- 3. MISSING SCREEN (Red) --- */
+        /* --- MISSING SCREEN --- */
         #screen-missing { background-color: #ef4444; color: white; text-align: center; justify-content: center; }
         .missing-title { font-weight: 800; font-size: 2rem; margin-bottom: 20px; line-height: 1.2; }
         .missing-avatar { 
@@ -84,11 +89,10 @@
         }
         .btn-dismiss { background: white; color: #ef4444; width: 100%; border-radius: 50px; padding: 15px; font-weight: 800; border: none; margin-top: auto; }
 
-        /* --- 4. BROADCAST SCREEN (Yellow) --- */
+        /* --- BROADCAST SCREEN --- */
         #screen-broadcast { background-color: #ffc107; color: #212529; text-align: center; justify-content: center; }
         .broadcast-card { background: white; padding: 25px; border-radius: 20px; text-align: left; box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
         .btn-ack { background: #212529; color: white; width: 100%; border-radius: 50px; padding: 15px; font-weight: 700; border: none; margin-top: auto; }
-
     </style>
 </head>
 <body>
@@ -97,8 +101,8 @@
         <div class="header-text">Keboree Scanner</div>
         
         <div class="camera-box">
-            <div id="reader"></div>
             <i class="bi bi-camera-fill camera-placeholder" id="camIcon"></i>
+            <div id="reader"></div>
         </div>
 
         <div class="input-group-custom">
@@ -155,8 +159,8 @@
         
         <div class="missing-avatar animate__animated animate__pulse animate__infinite" id="mAvatar">A</div>
         
-        <h2 class="fw-bold" id="mName">Alexandre Dumas</h2>
-        <p class="opacity-75" id="mDetails">Troop 451</p>
+        <h2 class="fw-bold" id="mName">--</h2>
+        <p class="opacity-75" id="mDetails">--</p>
 
         <button class="btn-dismiss" onclick="goHome()">Dismiss Alert</button>
     </div>
@@ -169,9 +173,7 @@
 
         <div class="broadcast-card animate__animated animate__bounceIn">
             <h5 class="fw-bold mb-2">Message</h5>
-            <p id="broadcastMsg" style="font-size: 1.1rem; line-height: 1.6;">
-                --
-            </p>
+            <p id="broadcastMsg" style="font-size: 1.1rem; line-height: 1.6;">--</p>
             <small class="text-muted" id="broadcastTime">Just now</small>
         </div>
 
@@ -188,7 +190,7 @@
     import { getFirestore, collection, doc, getDoc, addDoc, onSnapshot, serverTimestamp, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
     import { getAuth, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
-    // 🔴 CONFIG
+    // 🔴 YOUR CONFIG
     const firebaseConfig = {
         apiKey: "AIzaSyBsBsKnXv6FgYVk7OLo0XagFSBZgYajuNA",
         authDomain: "qr-system-02---web-based.firebaseapp.com",
@@ -216,17 +218,15 @@
         }
     });
 
-    // --- NAVIGATION ---
     window.showScreen = function(id) {
         document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
         document.getElementById(id).classList.add('active');
     }
     window.goHome = function() {
         showScreen('screen-home');
-        if(isCameraActive) stopCamera(); // Stop camera when returning home
+        if(isCameraActive) stopCamera(); 
     }
 
-    // --- EVENTS ---
     function loadEvents() {
         onSnapshot(collection(db, "events"), (snap) => {
             const sel = document.getElementById('eventSelect');
@@ -247,7 +247,6 @@
         });
     }
 
-    // --- CAMERA LOGIC ---
     async function populateCameras() {
         try {
             const devices = await Html5Qrcode.getCameras();
@@ -256,11 +255,9 @@
             if (devices && devices.length) {
                 devices.forEach(dev => {
                     const opt = document.createElement('option');
-                    opt.value = dev.id;
-                    opt.text = dev.label || `Camera ${sel.length + 1}`;
+                    opt.value = dev.id; opt.text = dev.label || `Camera ${sel.length + 1}`;
                     sel.appendChild(opt);
                 });
-                // Auto-select last camera (usually back)
                 sel.value = devices[devices.length-1].id; 
             } else {
                 sel.innerHTML = '<option value="">No Camera Found</option>';
@@ -269,24 +266,12 @@
     }
 
     window.handleScanToggle = function() {
-        // Manual ID Check
         const manualId = document.getElementById('manualInput').value.trim();
-        if(manualId) {
-            processScoutID(manualId);
-            return;
-        }
-
-        if(!selectedEvent) {
-            Swal.fire({icon:'warning', title:'Select Event', text:'Please select an event first.', confirmButtonColor:'#007bff'});
-            return;
-        }
-
-        // Toggle Camera
-        if(isCameraActive) {
-            stopCamera();
-        } else {
-            startCamera();
-        }
+        if(manualId) { processScoutID(manualId); return; }
+        if(!selectedEvent) { Swal.fire({icon:'warning', title:'Select Event', text:'Please select an event first.', confirmButtonColor:'#007bff'}); return; }
+        
+        if(isCameraActive) stopCamera();
+        else startCamera();
     }
 
     function startCamera() {
@@ -294,8 +279,7 @@
         html5QrCode = new Html5Qrcode("reader");
         document.getElementById('camIcon').style.display = 'none';
         
-        // Config to avoid overconstrained error
-        const config = { fps: 10, qrbox: { width: 250, height: 250 } };
+        const config = { fps: 15, qrbox: { width: 250, height: 250 } };
         const camConfig = camId ? { deviceId: { exact: camId } } : { facingMode: "environment" };
 
         html5QrCode.start(camConfig, config, onScanSuccess, (e)=>{})
@@ -331,46 +315,36 @@
         processScoutID(decodedText);
     }
 
-    // --- DATA PROCESSING ---
     async function processScoutID(idText) {
         Swal.showLoading();
         try {
-            // Check manual or scanned ID
             let docID = idText.replace('/', '_');
             let docSnap = await getDoc(doc(db, "scouts", docID));
-            
             if(!docSnap.exists()) {
                 const q = query(collection(db, "scouts"), where("id", "==", idText));
                 const qSnap = await getDocs(q);
                 if(!qSnap.empty) docSnap = qSnap.docs[0];
             }
-
             Swal.close();
 
             if(docSnap && docSnap.exists()) {
                 currentScout = docSnap.data();
-                
                 if(currentScout.isMissing) {
-                    // Show Missing Screen
                     document.getElementById('mAvatar').innerText = currentScout.name.charAt(0);
                     document.getElementById('mName').innerText = currentScout.name;
                     document.getElementById('mDetails').innerText = `${currentScout.id} • ${currentScout.troop}`;
                     showScreen('screen-missing');
                 } else {
-                    // Show Details Screen
                     document.getElementById('dAvatar').innerText = currentScout.name.charAt(0);
                     document.getElementById('dName').innerText = currentScout.name;
                     document.getElementById('dID').innerText = currentScout.id;
                     document.getElementById('dTroop').innerText = currentScout.troop;
                     document.getElementById('dDistrict').innerText = currentScout.district;
 
-                    // Generate Buttons
                     const container = document.getElementById('actionContainer');
                     container.innerHTML = "";
-                    
                     if(selectedEvent.actions && selectedEvent.actions.length > 0) {
                         selectedEvent.actions.forEach((act, index) => {
-                            // First button is Primary (Blue), others are white
                             let cls = index === 0 ? 'btn-action primary' : 'btn-action';
                             container.innerHTML += `<button onclick="window.submitLog('${act}')" class="${cls}">${act}</button>`;
                         });
@@ -385,7 +359,6 @@
         } catch(e) { Swal.close(); Swal.fire({icon:'error', title:'Error', text:e.message}); }
     }
 
-    // --- LOG SUBMIT ---
     window.submitLog = async function(action) {
         Swal.showLoading();
         try {
@@ -396,13 +369,11 @@
             });
             Swal.close();
             Swal.fire({icon:'success', title:'Recorded!', timer:1000, showConfirmButton:false});
-            
-            document.getElementById('manualInput').value = ""; // Clear input
-            goHome(); // Go back to scan next
+            document.getElementById('manualInput').value = "";
+            goHome(); 
         } catch(e) { Swal.fire('Error', e.message, 'error'); }
     }
 
-    // --- BROADCAST ---
     function listenBroadcast() {
         onSnapshot(doc(db, "system", "broadcast"), (d) => {
             if(d.exists() && d.data().message) {
