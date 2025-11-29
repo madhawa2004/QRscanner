@@ -4,9 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Scout Admin Dashboard</title>
-    
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
-    
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
@@ -16,24 +14,24 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     
     <style>
-        /* THEME */
         body { background-color: #f3f4f6; font-family: 'Poppins', sans-serif; color: #4b5563; }
         .sidebar { position: fixed; height: 100vh; width: 260px; background: #fff; border-right: 1px solid #e5e7eb; padding-top: 30px; z-index: 1000; }
         .sidebar h3 { color: #8b5cf6; text-align: center; font-weight: 700; margin-bottom: 40px; }
         .nav-link { color: #6b7280; padding: 12px 25px; margin: 4px 15px; border-radius: 12px; transition: 0.3s; font-weight: 500; cursor: pointer; }
         .nav-link:hover, .nav-link.active { background-color: #f5f3ff; color: #7c3aed; }
         .main-content { margin-left: 260px; padding: 40px; }
-        
         .card { border: none; background: #fff; border-radius: 16px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.02); }
         .btn-primary { background: #8b5cf6; border: none; } .btn-primary:hover { background: #7c3aed; }
-        .form-control:focus { border-color: #8b5cf6; box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.1); }
-        
-        /* Event Stat Cards */
         .stat-card { border-left: 5px solid #8b5cf6; transition: 0.3s; }
         .stat-card:hover { transform: translateY(-3px); box-shadow: 0 10px 20px rgba(0,0,0,0.05); }
-        .stat-title { font-size: 0.9rem; text-transform: uppercase; color: #9ca3af; font-weight: 600; }
         .stat-value { font-size: 1.8rem; font-weight: 700; color: #1f2937; }
-        .stat-sub { font-size: 0.8rem; }
+        .scout-tile { transition: 0.2s; border: 1px solid transparent; }
+        .scout-tile:hover { transform: translateY(-3px); box-shadow: 0 10px 20px rgba(0,0,0,0.05); }
+        .missing-scout { border: 2px solid #ef4444 !important; background-color: #fff5f5 !important; animation: pulseRed 2s infinite; }
+        @keyframes pulseRed { 0% {box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4);} 100% {box-shadow: 0 0 0 0 rgba(239, 68, 68, 0);} }
+        .badge-in { background-color: #d1fae5; color: #065f46; }
+        .badge-out { background-color: #fee2e2; color: #991b1b; }
+        .badge-other { background-color: #e0e7ff; color: #3730a3; }
     </style>
 </head>
 <body>
@@ -48,7 +46,9 @@
         <li class="nav-item"><a class="nav-link" onclick="loadView('events', this)"><i class="bi bi-calendar4-event"></i> Events</a></li>
         <li class="nav-item" id="nav-staff"><a class="nav-link" onclick="loadView('staff', this)"><i class="bi bi-people-fill"></i> Staff</a></li>
         <li class="nav-item"><a class="nav-link" onclick="loadView('registration', this)"><i class="bi bi-person-vcard-fill"></i> Registration</a></li>
-        <li class="nav-item"><a class="nav-link" onclick="loadView('reports', this)"><i class="bi bi-file-earmark-text-fill"></i> Reports</a></li> <li class="nav-item mt-5"><a class="nav-link text-danger" onclick="logout()"><i class="bi bi-box-arrow-left"></i> Logout</a></li>
+        <li class="nav-item"><a class="nav-link" onclick="loadView('reports', this)"><i class="bi bi-file-earmark-text-fill"></i> Reports</a></li>
+        <li class="nav-item"><a class="nav-link" onclick="loadView('logs', this)"><i class="bi bi-list-task"></i> Logs</a></li>
+        <li class="nav-item mt-5"><a class="nav-link text-danger" onclick="logout()"><i class="bi bi-box-arrow-left"></i> Logout</a></li>
     </ul>
 </div>
 
@@ -59,17 +59,13 @@
     </div>
 
     <div id="view-dashboard" class="view-section animate__animated animate__fadeIn">
-        
         <div class="row g-4 mb-4">
             <div class="col-md-4"><div class="card p-4"><h6 class="text-muted small fw-bold">TOTAL REGISTERED</h6><h2 class="fw-bold text-dark" id="statTotal">0</h2></div></div>
             <div class="col-md-4"><div class="card p-4"><h6 class="text-muted small fw-bold">TOTAL SCANS</h6><h2 class="fw-bold text-dark" id="statTotalScans">0</h2></div></div>
             <div class="col-md-4"><div class="card p-4"><h6 class="text-muted small fw-bold">SYSTEM</h6><h4 class="fw-bold text-success">Online</h4></div></div>
         </div>
-
         <h5 class="fw-bold mb-3 text-secondary">Live Event Status</h5>
-        <div id="liveEventCards" class="row g-4">
-            <div class="col-12 text-center text-muted py-5">Waiting for scan data...</div>
-        </div>
+        <div id="liveEventCards" class="row g-4"><div class="col-12 text-center text-muted py-5">Waiting for scan data...</div></div>
     </div>
 
     <div id="view-directory" class="view-section animate__animated animate__fadeIn" style="display:none;">
@@ -80,9 +76,7 @@
                 <button class="btn btn-primary px-4" onclick="performSearch()">SEARCH</button>
             </div>
         </div>
-        <div id="scoutGrid" class="row g-3">
-            <div class="col-12 text-center text-muted py-5">Results will appear here...</div>
-        </div>
+        <div id="scoutGrid" class="row g-3"><div class="col-12 text-center text-muted py-5">Results will appear here...</div></div>
     </div>
 
     <div id="view-events" class="view-section animate__animated animate__fadeIn" style="display:none;">
@@ -98,27 +92,6 @@
                 </div>
             </div>
             <div class="col-md-7"><div class="card p-4"><h5 class="fw-bold mb-3">Active Events</h5><div id="eventsList" class="d-flex flex-column gap-2"></div></div></div>
-        </div>
-    </div>
-
-    <div id="view-reports" class="view-section animate__animated animate__fadeIn" style="display:none;">
-        <div class="row g-4">
-            <div class="col-md-6">
-                <div class="card p-5 text-center h-100">
-                    <i class="bi bi-people-fill display-4 text-primary mb-3"></i>
-                    <h4>Registered Scouts</h4>
-                    <p class="text-muted">Download list of all registered scouts with IDs and Troop details.</p>
-                    <button onclick="downloadScoutReport()" class="btn btn-outline-primary fw-bold">Download PDF</button>
-                </div>
-            </div>
-            <div class="col-md-6">
-                <div class="card p-5 text-center h-100">
-                    <i class="bi bi-list-columns-reverse display-4 text-success mb-3"></i>
-                    <h4>Full Event Log</h4>
-                    <p class="text-muted">Download complete history of all scans and movements.</p>
-                    <button onclick="downloadLogReport()" class="btn btn-outline-success fw-bold">Download PDF</button>
-                </div>
-            </div>
         </div>
     </div>
 
@@ -152,7 +125,22 @@
         </div>
     </div>
 
+    <div id="view-reports" class="view-section animate__animated animate__fadeIn" style="display:none;">
+        <div class="row g-4">
+            <div class="col-md-6"><div class="card p-5 text-center h-100"><i class="bi bi-people-fill display-4 text-primary mb-3"></i><h4>Registered Scouts</h4><button onclick="downloadScoutReport()" class="btn btn-outline-primary fw-bold mt-3">Download PDF</button></div></div>
+            <div class="col-md-6"><div class="card p-5 text-center h-100"><i class="bi bi-list-columns-reverse display-4 text-success mb-3"></i><h4>Full Event Log</h4><button onclick="downloadLogReport()" class="btn btn-outline-success fw-bold mt-3">Download PDF</button></div></div>
+        </div>
+    </div>
+
+    <div id="view-logs" class="view-section animate__animated animate__fadeIn" style="display:none;">
+        <div class="card p-4">
+            <h5 class="fw-bold mb-4">Live Logs (Realtime)</h5>
+            <div class="table-responsive"><table class="table table-hover"><thead class="bg-light"><tr><th class="ps-3">Time</th><th>ID</th><th>Event</th><th>Action</th><th>Scanner</th></tr></thead><tbody id="logsTableBody"></tbody></table></div>
+        </div>
+    </div>
 </div>
+
+<div class="modal fade" id="scoutModal" tabindex="-1"><div class="modal-dialog modal-dialog-centered"><div class="modal-content border-0 shadow-lg rounded-4"><div class="modal-header bg-primary text-white border-0"><h5 class="modal-title fw-bold">Profile</h5><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div><div class="modal-body p-4 text-center"><div class="bg-light text-primary border border-2 border-primary mx-auto mb-2 d-flex align-items-center justify-content-center" style="width: 80px; height: 80px; font-size: 2rem; border-radius:50%;" id="mAvatar"></div><h4 class="fw-bold mb-0" id="mName">Loading...</h4><span class="badge bg-secondary rounded-pill" id="mID">--</span><div class="row mt-3 text-center"><div class="col-6"><small class="text-muted fw-bold">TROOP</small><div id="mTroop" class="fw-bold">-</div></div><div class="col-6"><small class="text-muted fw-bold">DISTRICT</small><div id="mDistrict" class="fw-bold">-</div></div></div><hr><div class="d-grid gap-2"><button class="btn btn-outline-danger fw-bold" id="btnMissing" onclick="toggleMissingStatus()">MARK AS MISSING</button></div></div><div class="modal-footer bg-light border-0 justify-content-between"><button class="btn btn-link text-danger text-decoration-none" onclick="deleteScoutProfile()">Delete</button><button class="btn btn-dark rounded-pill px-4" data-bs-dismiss="modal">Close</button></div></div></div></div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
@@ -160,10 +148,10 @@
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
     import { getFirestore, collection, doc, setDoc, deleteDoc, addDoc, onSnapshot, serverTimestamp, getDoc, query, where, getDocs, updateDoc, writeBatch } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-    import { getDatabase, ref, onValue, set, remove } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+    import { getDatabase, ref, onValue, set, remove, push } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
     import { getAuth, signOut, onAuthStateChanged, createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
-    // 🔴 YOUR CONFIG
+    // 🔴 YOUR CONFIG WITH RTDB URL
     const firebaseConfig = {
         apiKey: "AIzaSyBsBsKnXv6FgYVk7OLo0XagFSBZgYajuNA",
         authDomain: "qr-system-02---web-based.firebaseapp.com",
@@ -171,7 +159,7 @@
         storageBucket: "qr-system-02---web-based.firebasestorage.app",
         messagingSenderId: "742559334366",
         appId: "1:742559334366:web:0c104f39997de0572fe74f",
-        databaseURL: "https://qr-system-02---web-based-default-rtdb.firebaseio.com"
+        databaseURL: "https://qr-system-02---web-based-default-rtdb.asia-southeast1.firebasedatabase.app/"
     };
 
     const app = initializeApp(firebaseConfig);
@@ -183,11 +171,10 @@
 
     let scoutModal;
     let currentUserRole = 'moderator';
-    let allEventsCache = []; // Store events to map ID to Name
+    let currentScoutDocId = null; 
+    let currentScoutData = null;
 
-    document.addEventListener('DOMContentLoaded', () => {
-        // Init modal if exists in HTML (Added dynamically in previous steps if needed)
-    });
+    document.addEventListener('DOMContentLoaded', () => { scoutModal = new bootstrap.Modal(document.getElementById('scoutModal')); });
 
     onAuthStateChanged(auth, async (user) => { 
         if (!user) window.location.href="index.html"; 
@@ -210,53 +197,78 @@
 
     function initListeners() { 
         loadUsers(); loadEvents(); loadLogs(); loadStats(); listenForEmergencies(); 
-        // Load Events for Card Mapping
-        onSnapshot(collection(db, "events"), snap => {
-            allEventsCache = [];
-            snap.forEach(d => allEventsCache.push({id: d.id, ...d.data()}));
+    }
+
+    // --- HYBRID LOGS & CARDS ---
+    function loadLogs() {
+        const logsRef = ref(rtdb, 'logs');
+        onValue(logsRef, (snapshot) => {
+            const data = snapshot.val();
+            const container = document.getElementById('liveEventCards');
+            
+            if (data) {
+                const logsArr = Object.values(data);
+                document.getElementById('statTotalScans').innerText = logsArr.length;
+
+                // Live Cards Logic
+                let stats = {};
+                logsArr.forEach(l => {
+                    if(!stats[l.eventName]) stats[l.eventName] = { in: 0, out: 0 };
+                    if(l.action.includes('IN')) stats[l.eventName].in++;
+                    if(l.action.includes('OUT')) stats[l.eventName].out++;
+                });
+
+                container.innerHTML = "";
+                Object.keys(stats).forEach(eventName => {
+                    let s = stats[eventName];
+                    let current = s.in - s.out; if(current < 0) current = 0;
+                    container.innerHTML += `
+                    <div class="col-md-3"><div class="card p-3 stat-card"><h6 class="stat-title">${eventName}</h6><div class="d-flex justify-content-between align-items-end mt-2"><div><span class="stat-value text-primary">${current}</span><span class="stat-sub text-muted d-block">Current</span></div><div class="text-end text-muted small"><div class="text-success"><i class="bi bi-arrow-down"></i> ${s.in}</div><div class="text-danger"><i class="bi bi-arrow-up"></i> ${s.out}</div></div></div></div></div>`;
+                });
+
+                // Update Table (Last 50)
+                const recentLogs = logsArr.reverse().slice(0, 50);
+                let h = "";
+                recentLogs.forEach(l => {
+                    let time = new Date(l.timestamp).toLocaleTimeString();
+                    let badgeClass = "badge-other";
+                    if(l.action.includes('IN')) badgeClass = "badge-in";
+                    if(l.action.includes('OUT')) badgeClass = "badge-out";
+                    h += `<tr><td class="ps-3 text-muted small fw-bold">${time}</td><td class="fw-bold">${l.scoutID}</td><td>${l.eventName}</td><td><span class="badge ${badgeClass}">${l.action}</span></td><td class="pe-3 text-secondary small">${l.scannedBy.split('@')[0]}</td></tr>`;
+                });
+                document.getElementById('logsTableBody').innerHTML = h;
+
+            } else {
+                container.innerHTML = `<div class="col-12 text-center text-muted">No activity yet.</div>`;
+            }
         });
     }
 
-    // --- SEARCH & SYSTEM CLEAR ---
+    // --- SEARCH ---
     window.performSearch = async function() {
         const term = document.getElementById('searchInput').value.trim();
         const container = document.getElementById('scoutGrid');
         
-        // 🔥 SECRET SYSTEM CLEAR CODE
+        // SYSTEM CLEAR
         if(term === '200431504082') {
             if(currentUserRole !== 'admin') return Swal.fire('Denied', 'Admin Access Only', 'error');
-            
-            Swal.fire({
-                title: '⚠️ SYSTEM RESET',
-                text: "Are you sure? This will delete ALL scouts and logs permanently!",
-                icon: 'warning',
-                showCancelButton: true,
-                confirmButtonColor: '#d33',
-                confirmButtonText: 'YES, WIPE DATA'
-            }).then(async (res) => {
+            Swal.fire({title: '⚠️ SYSTEM RESET', text: "WIPE ALL DATA?", icon: 'warning', showCancelButton: true, confirmButtonColor: '#d33', confirmButtonText: 'YES'}).then(async (res) => {
                 if (res.isConfirmed) {
                     Swal.showLoading();
-                    // 1. Clear Logs (RTDB)
                     await remove(ref(rtdb, 'logs'));
-                    
-                    // 2. Clear Scouts (Firestore Batch)
                     const q = query(collection(db, "scouts"));
                     const snap = await getDocs(q);
                     const batch = writeBatch(db);
                     snap.forEach(doc => batch.delete(doc.ref));
                     await batch.commit();
-                    
-                    // 3. Reset Counter
                     await setDoc(doc(db, "system", "scout_counter"), { val: 0 });
-
-                    Swal.fire('System Cleared', 'All data wiped.', 'success');
+                    Swal.fire('System Cleared', '', 'success');
                 }
             });
             return;
         }
 
-        // Normal Search
-        if(!term) return Swal.fire('Error', 'Enter ID or Name', 'warning');
+        if(!term) return Swal.fire('Error', 'Enter ID', 'warning');
         container.innerHTML = `<div class="col-12 text-center text-muted py-5"><span class="spinner-border text-primary"></span></div>`;
 
         try {
@@ -271,131 +283,73 @@
             s1.forEach(d => { if(!results.some(r=>r.id===d.data().id)) results.push({ ...d.data(), _docId: d.id }); });
 
             container.innerHTML = "";
-            if(results.length === 0) { container.innerHTML = `<div class="col-12 text-center text-muted">No results found.</div>`; return; }
+            if(results.length === 0) { container.innerHTML = `<div class="col-12 text-center text-muted">No results.</div>`; return; }
 
             results.forEach(s => {
+                let isMissing = s.isMissing ? "missing-scout" : "";
+                let btnMissText = s.isMissing ? "Found?" : "Missing?";
                 container.innerHTML += `
                 <div class="col-md-4 col-lg-3 animate__animated animate__fadeIn">
-                    <div class="card p-3 shadow-sm scout-tile">
+                    <div class="card p-3 shadow-sm scout-tile ${isMissing}">
                         <div class="d-flex align-items-center mb-2">
                             <div class="bg-light text-primary d-flex align-items-center justify-content-center me-3" style="width:50px; height:50px; border-radius:50%; font-weight:bold;">${s.name.charAt(0)}</div>
-                            <div><h6 class="fw-bold mb-0">${s.name}</h6><small class="text-muted">${s.id}</small></div>
+                            <div><h6 class="fw-bold mb-0 text-truncate" style="max-width:150px;">${s.name}</h6><small class="text-muted">${s.id}</small></div>
                         </div>
-                        <button class="btn btn-sm btn-outline-danger w-100" onclick="deleteScout('${s._docId}')"><i class="bi bi-trash"></i> Delete</button>
+                        <div class="d-flex gap-2">
+                            <button class="btn btn-sm btn-outline-warning w-100" onclick="confirmMissing('${s._docId}', ${s.isMissing})">${btnMissText}</button>
+                            <button class="btn btn-sm btn-light-danger" onclick="deleteScout('${s._docId}')"><i class="bi bi-trash"></i></button>
+                        </div>
                     </div>
                 </div>`;
             });
-        } catch(e) { console.error(e); container.innerHTML = "Error"; }
+        } catch(e) { container.innerHTML = "Error"; }
     }
 
+    // --- ACTIONS ---
+    window.confirmMissing = async function(docId, currentStatus) {
+        if(await Swal.fire({title: currentStatus?"Mark Found?":"Mark Missing?", icon:'warning', showCancelButton:true}).then(r=>r.isConfirmed)) {
+            await updateDoc(doc(db, "scouts", docId), { isMissing: !currentStatus });
+            window.performSearch();
+        }
+    }
     window.deleteScout = async function(id) {
-        if(confirm("Delete Scout?")) { await deleteDoc(doc(db, "scouts", id)); window.performSearch(); }
+        if(currentUserRole !== 'admin') return Swal.fire('Denied', 'Admin Only', 'error');
+        if(await Swal.fire({title: 'Delete?', text:"Cannot undo", icon:'warning', showCancelButton:true, confirmButtonColor:'#d33'}).then(r=>r.isConfirmed)) {
+            await deleteDoc(doc(db, "scouts", id)); window.performSearch();
+        }
     }
 
-    // --- REPORTS (PDF) ---
+    // --- REPORTS ---
     window.downloadScoutReport = async function() {
         Swal.showLoading();
         const doc = new window.jspdf.jsPDF();
-        
         const q = query(collection(db, "scouts"));
         const snap = await getDocs(q);
-        
         let data = [];
-        snap.forEach(d => {
-            let s = d.data();
-            data.push([s.id, s.name, s.troop, s.district]);
-        });
-
-        doc.text("Registered Scouts Report", 14, 15);
-        doc.autoTable({
-            head: [['ID', 'Name', 'Troop', 'District']],
-            body: data,
-            startY: 20
-        });
+        snap.forEach(d => { let s=d.data(); data.push([s.id, s.name, s.troop, s.district]); });
+        doc.text("Registered Scouts", 14, 15);
+        doc.autoTable({head: [['ID', 'Name', 'Troop', 'District']], body: data, startY: 20});
         doc.save("Scouts_Report.pdf");
         Swal.close();
     }
 
     window.downloadLogReport = function() {
         Swal.showLoading();
-        // Fetch all logs from RTDB
         const logsRef = ref(rtdb, 'logs');
         onValue(logsRef, (snapshot) => {
             const data = snapshot.val();
-            if(!data) { Swal.fire('No Data', 'Logs are empty', 'info'); return; }
-
+            if(!data) { Swal.fire('No Data', '', 'info'); return; }
             const doc = new window.jspdf.jsPDF();
             let rows = [];
-            
-            Object.values(data).forEach(l => {
-                let time = new Date(l.timestamp).toLocaleString();
-                rows.push([time, l.scoutID, l.eventName, l.action, l.scannedBy.split('@')[0]]);
-            });
-
-            doc.text("Full Event Log Report", 14, 15);
-            doc.autoTable({
-                head: [['Time', 'Scout ID', 'Event', 'Action', 'Scanner']],
-                body: rows,
-                startY: 20
-            });
-            doc.save("Event_Logs.pdf");
+            Object.values(data).forEach(l => rows.push([new Date(l.timestamp).toLocaleString(), l.scoutID, l.eventName, l.action, l.scannedBy.split('@')[0]]));
+            doc.text("Event Logs", 14, 15);
+            doc.autoTable({head: [['Time', 'ID', 'Event', 'Action', 'Scanner']], body: rows, startY: 20});
+            doc.save("Logs_Report.pdf");
             Swal.close();
         }, {onlyOnce: true});
     }
 
-    // --- LIVE EVENT CARDS (RTDB Listener) ---
-    function loadLogs() {
-        const logsRef = ref(rtdb, 'logs');
-        
-        onValue(logsRef, (snapshot) => {
-            const data = snapshot.val();
-            const container = document.getElementById('liveEventCards');
-            
-            if (data) {
-                const logsArr = Object.values(data);
-                document.getElementById('statTotalScans').innerText = logsArr.length;
-
-                // Calculate Stats per Event
-                let stats = {};
-                
-                logsArr.forEach(l => {
-                    if(!stats[l.eventName]) stats[l.eventName] = { in: 0, out: 0 };
-                    if(l.action.includes('IN')) stats[l.eventName].in++;
-                    if(l.action.includes('OUT')) stats[l.eventName].out++;
-                });
-
-                container.innerHTML = "";
-                
-                Object.keys(stats).forEach(eventName => {
-                    let s = stats[eventName];
-                    let current = s.in - s.out;
-                    if(current < 0) current = 0; // Just in case
-
-                    container.innerHTML += `
-                    <div class="col-md-3">
-                        <div class="card p-3 stat-card">
-                            <h6 class="stat-title">${eventName}</h6>
-                            <div class="d-flex justify-content-between align-items-end mt-2">
-                                <div>
-                                    <span class="stat-value text-primary">${current}</span>
-                                    <span class="stat-sub text-muted d-block">Current Inside</span>
-                                </div>
-                                <div class="text-end text-muted small">
-                                    <div class="text-success"><i class="bi bi-arrow-down"></i> ${s.in}</div>
-                                    <div class="text-danger"><i class="bi bi-arrow-up"></i> ${s.out}</div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>`;
-                });
-
-            } else {
-                container.innerHTML = `<div class="col-12 text-center text-muted">No activity yet.</div>`;
-            }
-        });
-    }
-
-    // --- OTHER FUNCTIONS (SAME AS BEFORE) ---
+    // --- OTHER FUNCTIONS ---
     function loadStats(){onSnapshot(collection(db,"scouts"),s=>document.getElementById('statTotal').innerText=s.size);}
     window.saveNewEvent=async()=>{const name=document.getElementById('evtName').value;const type=document.getElementById('evtType').value;const actions=document.getElementById('evtActions').value.split(',');const pts=document.getElementById('evtPoints').value;await addDoc(collection(db,"events"),{name,type,actions,points:pts,active:true,createdAt:serverTimestamp()});Swal.fire('Success','Created','success');}
     function loadEvents(){onSnapshot(collection(db,"events"),snap=>{let h="";snap.forEach(d=>{h+=`<div class="card p-3 mb-2 shadow-sm d-flex flex-row justify-content-between"><div><h6 class="fw-bold mb-0">${d.data().name}</h6></div><button class="btn btn-sm btn-light-danger" onclick="deleteEvent('${d.id}')"><i class="bi bi-trash"></i></button></div>`});document.getElementById('eventsList').innerHTML=h;});}
@@ -406,9 +360,9 @@
     window.processRegistration=async()=>{const t=document.getElementById('troopNumberInput').value;const txt=document.getElementById('bulkInput').value;const l=txt.split('\n');let id=1;try{const c=await getDoc(doc(db,"system","scout_counter"));if(c.exists())id=c.data().val+1;}catch(e){}document.getElementById('regProgress').style.display='flex';window.recentScouts=[];for(let r of l){let p=r.split(',');if(p.length>=1){let sID=`KG${t}/${id.toString().padStart(3,'0')}`;await setDoc(doc(db,"scouts",`KG${t}_${id.toString().padStart(3,'0')}`),{name:p[0],troop:`Troop ${t}`,district:p[2]||'',id:sID,isMissing:false});window.recentScouts.push({id:sID,name:p[0],troop:`Troop ${t}`});id++;}}await setDoc(doc(db,"system","scout_counter"),{val:id-1});document.getElementById('regProgress').style.display='none';document.getElementById('btnPrint').disabled=false;showPreview();Swal.fire('Done','Registered','success');}
     window.recentScouts=[];function showPreview(){let h="";window.recentScouts.forEach(s=>{h+=`<div class="col-4"><div class="border rounded p-2 bg-white small text-center"><b>${s.id}</b><br>${s.name}</div></div>`});document.getElementById('stickerPreview').innerHTML=h;}
     window.generatePDF=()=>{const{jsPDF}=window.jspdf;const doc=new jsPDF();let x=10,y=10,w=45,h=65,c=0,r=0;const qc=document.getElementById('qr-hidden');window.recentScouts.forEach((s,i)=>{if(i>0&&i%16===0){doc.addPage();c=0;r=0}let cx=x+(c*(w+2)),cy=y+(r*(h+2));doc.rect(cx,cy,w,h);doc.setFontSize(10);doc.text(s.id,cx+w/2,cy+40,{align:"center"});qc.innerHTML='';new QRCode(qc,{text:s.id,width:100,height:100});let img=qc.querySelector('img').src;doc.addImage(img,'PNG',cx+(w-25)/2,cy+10,25,25);c++;if(c>=4){c=0;r++}});doc.save('IDs.pdf');}
-    window.triggerEmergency=async()=>{const{value:t}=await Swal.fire({title:'Broadcast',input:'text'});if(t)await setDoc(doc(db,"system","broadcast"),{message:t,timestamp:serverTimestamp()});}
-    function listenForEmergencies(){onSnapshot(doc(db,"system","broadcast"),d=>{if(d.exists()&&d.data().message)Swal.fire({icon:'warning',title:'Alert',text:d.data().message})});}
-    window.loadView=(v,el)=>{document.querySelectorAll('.view-section').forEach(d=>d.style.display='none');document.getElementById('view-'+v).style.display='block';const t={'dashboard':'Dashboard','events':'Events','staff':'Staff','registration':'Registration','reports':'Reports','directory':'Directory'};document.getElementById('pageTitle').innerText=t[v];}
+    window.triggerEmergency=async()=>{const{value:t}=await Swal.fire({title:'Broadcast',input:'text'});if(t)await set(ref(rtdb, 'system/broadcast'),{message:t,timestamp:serverTimestamp()});}
+    function listenForEmergencies(){onValue(ref(rtdb, 'system/broadcast'),d=>{if(d.exists()&&d.val().message)Swal.fire({icon:'warning',title:'Alert',text:d.val().message})});}
+    window.loadView=(v,el)=>{document.querySelectorAll('.view-section').forEach(d=>d.style.display='none');document.getElementById('view-'+v).style.display='block';const t={'dashboard':'Dashboard','events':'Events','staff':'Staff','registration':'Registration','reports':'Reports','directory':'Directory','logs':'Logs'};document.getElementById('pageTitle').innerText=t[v];}
 </script>
 </body>
 </html>
