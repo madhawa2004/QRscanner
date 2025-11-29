@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Scout Admin Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <style>
+        body { background-color: #f0f2f5; font-family: 'Poppins', sans-serif; color: #4b5563; }
+        .btn, .nav-link, .scout-tile { cursor: pointer; user-select: none; }
+        .sidebar { position: fixed; height: 100vh; width: 260px; background: #fff; padding-top: 30px; border-right: 1px solid #e5e7eb; z-index: 1000; }
+        .sidebar h3 { color: #7c3aed; text-align: center; font-weight: 700; margin-bottom: 40px; }
+        .nav-link { color: #6b7280; padding: 12px 25px; margin: 4px 15px; border-radius: 12px; transition: 0.3s; font-weight: 500; }
+        .nav-link:hover, .nav-link.active { background-color: #f3f0ff; color: #7c3aed; font-weight: 600; }
+        .nav-link i { margin-right: 12px; font-size: 1.1rem; }
+        .main-content { margin-left: 260px; padding: 30px; }
+        .card { border: none; background: #fff; border-radius: 16px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.02); }
+        .form-control, .form-select { background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 10px; padding: 10px 15px; }
+        .form-control:focus { border-color: #7c3aed; box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.1); background: #fff; }
+        .btn-primary { background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%); border: none; border-radius: 10px; padding: 10px 20px; font-weight: 500; transition: 0.3s; }
+        .btn-primary:hover { transform: translateY(-2px); }
+        .btn-light-danger { background: #fff5f5; color: #e53e3e; border: none; border-radius: 10px; }
+        .btn-light-danger:hover { background: #fed7d7; color: #c53030; }
+        .btn-emergency { border: 2px solid #ef4444; color: #ef4444; background: transparent; border-radius: 50px; font-weight: 600; padding: 8px 24px; }
+        .btn-emergency:hover { background: #ef4444; color: #fff; }
+        .scout-tile:hover { transform: translateY(-3px); border-color: #7c3aed; }
+        .missing-scout { border: 2px solid #ef4444 !important; background: #fef2f2 !important; animation: pulseRed 2s infinite; }
+        @keyframes pulseRed { 0% {box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4);} 70% {box-shadow: 0 0 0 10px rgba(239, 68, 68, 0);} 100% {box-shadow: 0 0 0 0 rgba(239, 68, 68, 0);} }
+    </style>
+</head>
+<body>
+
+<div id="qr-hidden" style="display:none;"></div>
+
+<div class="sidebar">
+    <h3>⚜️ SCOUT<span style="color:#222">SYS</span></h3>
+    <ul class="nav flex-column">
+        <li class="nav-item"><a class="nav-link active" onclick="loadView('dashboard', this)"><i class="bi bi-grid-fill"></i> Overview</a></li>
+        <li class="nav-item"><a class="nav-link" onclick="loadView('directory', this)"><i class="bi bi-folder2-open"></i> Directory</a></li>
+        <li class="nav-item"><a class="nav-link" onclick="loadView('events', this)"><i class="bi bi-calendar4-event"></i> Events</a></li>
+        
+        <li class="nav-item" id="nav-staff"><a class="nav-link" onclick="loadView('staff', this)"><i class="bi bi-people-fill"></i> Staff</a></li>
+        
+        <li class="nav-item"><a class="nav-link" onclick="loadView('registration', this)"><i class="bi bi-person-vcard-fill"></i> Registration</a></li>
+        <li class="nav-item"><a class="nav-link" onclick="loadView('logs', this)"><i class="bi bi-list-task"></i> Logs</a></li>
+        <li class="nav-item mt-5"><a class="nav-link text-danger" onclick="logout()"><i class="bi bi-box-arrow-left"></i> Logout</a></li>
+    </ul>
+</div>
+
+<div class="main-content">
+    <div class="d-flex justify-content-between align-items-center mb-5">
+        <div>
+            <h3 class="fw-bold mb-1" id="pageTitle">Dashboard</h3>
+            <span class="badge bg-light text-primary border" id="userRoleDisplay">Loading...</span>
+        </div>
+        <button onclick="triggerEmergency()" class="btn btn-emergency" id="btn-emergency"><i class="bi bi-megaphone-fill"></i> Broadcast Alert</button>
+    </div>
+
+    <div id="view-dashboard" class="view-section animate__animated animate__fadeIn">
+        <div class="row g-4">
+            <div class="col-md-4"><div class="card p-4"><div class="d-flex align-items-center"><div class="bg-primary bg-opacity-10 p-3 rounded-4 text-primary"><i class="bi bi-people-fill fs-3"></i></div><div class="ms-3"><h6 class="text-muted small fw-bold">TOTAL REGISTERED</h6><h2 class="fw-bold text-dark" id="statTotal">0</h2></div></div></div></div>
+            <div class="col-md-4"><div class="card p-4"><div class="d-flex align-items-center"><div class="bg-success bg-opacity-10 p-3 rounded-4 text-success"><i class="bi bi-qr-code fs-3"></i></div><div class="ms-3"><h6 class="text-muted small fw-bold">ON GROUND</h6><h2 class="fw-bold text-dark" id="statGround">0</h2></div></div></div></div>
+            <div class="col-md-4"><div class="card p-4"><div class="d-flex align-items-center"><div class="bg-warning bg-opacity-10 p-3 rounded-4 text-warning"><i class="bi bi-hdd-stack fs-3"></i></div><div class="ms-3"><h6 class="text-muted small fw-bold">SYSTEM</h6><h4 class="fw-bold text-success">Online</h4></div></div></div></div>
+        </div>
+    </div>
+
+    <div id="view-directory" class="view-section animate__animated animate__fadeIn" style="display:none;">
+        <div class="card p-4 mb-4">
+            <div class="input-group">
+                <span class="input-group-text bg-white border-end-0"><i class="bi bi-search text-primary"></i></span>
+                <input type="text" id="searchInput" class="form-control border-start-0 ps-0" placeholder="Search by Scout Name or ID..." onkeyup="filterScouts()">
+            </div>
+        </div>
+        <div id="scoutGrid" class="row g-3"><div class="col-12 text-center text-muted py-5">Loading directory...</div></div>
+    </div>
+
+    <div id="view-events" class="view-section animate__animated animate__fadeIn" style="display:none;">
+        <div class="row">
+            <div class="col-md-5">
+                <div class="card p-4 h-100">
+                    <h5 class="fw-bold mb-4">Create Event</h5>
+                    <div class="mb-3"><label class="small text-muted fw-bold">NAME</label><input type="text" id="evtName" class="form-control" placeholder="E.g. Main Gate"></div>
+                    <div class="mb-3"><label class="small text-muted fw-bold">TYPE</label><select id="evtType" class="form-select"><option value="ACCESS">Access Control</option><option value="ACTIVITY">Activity</option><option value="ONE_TIME">One Time</option></select></div>
+                    <div class="mb-3"><label class="small text-muted fw-bold">BUTTONS</label><input type="text" id="evtActions" class="form-control" placeholder="IN, OUT"><div class="form-text small">Separate with comma</div></div>
+                    <div class="mb-4"><label class="small text-muted fw-bold">POINTS</label><input type="number" id="evtPoints" class="form-control" placeholder="0"></div>
+                    <button onclick="saveNewEvent()" class="btn btn-primary w-100">Publish Event</button>
+                </div>
+            </div>
+            <div class="col-md-7">
+                <div class="card p-4 h-100">
+                    <h5 class="fw-bold mb-4">Active Events</h5>
+                    <div id="eventsList" class="d-flex flex-column gap-2"><div class="text-center py-5 text-muted">Loading events...</div></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="view-staff" class="view-section animate__animated animate__fadeIn" style="display:none;">
+        <div class="row">
+            <div class="col-md-4">
+                <div class="card p-4">
+                    <h5 class="fw-bold mb-4">Add User</h5>
+                    <div class="mb-3"><input type="email" id="newEmail" class="form-control" placeholder="Email"></div>
+                    <div class="mb-3"><input type="password" id="newPass" class="form-control" placeholder="Password"></div>
+                    <div class="mb-3"><select id="newRole" class="form-select"><option value="scanner">Scanner</option><option value="moderator">Moderator</option><option value="admin">Admin</option></select></div>
+                    <button onclick="createNewUser()" class="btn btn-primary w-100">Create Account</button>
+                </div>
+            </div>
+            <div class="col-md-8"><div class="card p-4"><h5 class="fw-bold mb-4">Team List</h5><table class="table align-middle"><tbody id="usersTableBody"></tbody></table></div></div>
+        </div>
+    </div>
+
+    <div id="view-registration" class="view-section animate__animated animate__fadeIn" style="display:none;">
+        <div class="row">
+            <div class="col-md-5">
+                <div class="card p-4">
+                    <h5 class="fw-bold mb-3">Bulk Registration</h5>
+                    <div class="bg-light p-3 rounded mb-3 border"><label class="small fw-bold text-primary">TROOP NUMBER</label><input type="text" id="troopNumberInput" class="form-control fw-bold" placeholder="e.g. 25"><div class="form-text small">ID Format: <b>KG25/001</b></div></div>
+                    <label class="small text-muted fw-bold">PASTE DATA</label>
+                    <textarea id="bulkInput" class="form-control mb-3" rows="6" placeholder="Name, Troop, District..."></textarea>
+                    <div id="regProgress" class="progress mb-3" style="display:none; height:5px;"><div class="progress-bar bg-primary" style="width:0%"></div></div>
+                    <button onclick="processRegistration()" class="btn btn-primary w-100">Register & Generate IDs</button>
+                </div>
+            </div>
+            <div class="col-md-7">
+                <div class="card p-4 h-100">
+                    <div class="d-flex justify-content-between mb-3"><h5>Preview</h5><button id="btnPrint" onclick="generatePDF()" class="btn btn-dark btn-sm" disabled>Download PDF</button></div>
+                    <div id="stickerPreview" class="row g-2 p-3 bg-light rounded-3" style="min-height:300px; max-height:500px; overflow-y:auto;"><div class="text-center text-muted w-100 mt-5 small">IDs will appear here</div></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="view-logs" class="view-section animate__animated animate__fadeIn" style="display:none;">
+        <div class="card p-4">
+            <h5 class="fw-bold mb-4">Scan Activity</h5>
+            <div class="table-responsive"><table class="table table-hover align-middle"><thead><tr><th class="ps-3 border-0 rounded-start">Time</th><th>ID</th><th>Event</th><th class="pe-3 rounded-end">Scanner</th></tr></thead><tbody id="logsTableBody"></tbody></table></div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="scoutModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
+            <div class="modal-header bg-primary text-white border-0">
+                <h5 class="modal-title fw-bold"><i class="bi bi-person-badge me-2"></i>Profile</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-4">
+                <div class="text-center mb-4">
+                    <div class="bg-light text-primary border border-2 border-primary mx-auto mb-2 d-flex align-items-center justify-content-center" style="width: 80px; height: 80px; font-size: 2rem; border-radius:50%;" id="mAvatar"></div>
+                    <h4 class="fw-bold mb-0" id="mName">Loading...</h4>
+                    <span class="badge bg-secondary rounded-pill" id="mID">KG25/000</span>
+                </div>
+                <div class="row text-center mb-4 g-2">
+                    <div class="col-6"><div class="p-2 border rounded bg-light"><small class="text-muted d-block fw-bold">TROOP</small><span id="mTroop" class="fw-bold text-dark">-</span></div></div>
+                    <div class="col-6"><div class="p-2 border rounded bg-light"><small class="text-muted d-block fw-bold">DISTRICT</small><span id="mDistrict" class="fw-bold text-dark">-</span></div></div>
+                </div>
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h6 class="fw-bold text-primary mb-0"><i class="bi bi-clock-history me-1"></i> Recent Activity</h6>
+                    <span class="badge bg-warning text-dark" id="mPoints">0 Scans</span>
+                </div>
+                <div class="border rounded p-0 overflow-hidden mb-4">
+                    <table class="table table-sm table-striped mb-0" style="font-size:0.85rem;"><tbody id="mLogTable"><tr><td class="text-center p-3 text-muted">No records found.</td></tr></tbody></table>
+                </div>
+                <div class="d-grid gap-2">
+                    <button class="btn btn-outline-danger fw-bold py-2" id="btnMissing" onclick="toggleMissingStatus()"><i class="bi bi-exclamation-triangle-fill"></i> MARK AS MISSING</button>
+                </div>
+            </div>
+            <div class="modal-footer bg-light border-0 justify-content-between">
+                <button type="button" class="btn btn-link text-danger text-decoration-none" onclick="deleteScoutProfile()"><i class="bi bi-trash"></i> Delete Scout</button>
+                <button type="button" class="btn btn-dark px-4 rounded-pill" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+    import { getFirestore, collection, doc, setDoc, deleteDoc, addDoc, onSnapshot, serverTimestamp, getDoc, query, orderBy, limit, where, getDocs, updateDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+    import { getAuth, signOut, onAuthStateChanged, createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+
+    // 🔴 CONFIG
+    const firebaseConfig = {
+        apiKey: "AIzaSyBsBsKnXv6FgYVk7OLo0XagFSBZgYajuNA",
+        authDomain: "qr-system-02---web-based.firebaseapp.com",
+        projectId: "qr-system-02---web-based",
+        storageBucket: "qr-system-02---web-based.firebasestorage.app",
+        messagingSenderId: "742559334366",
+        appId: "1:742559334366:web:0c104f39997de0572fe74f"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    const auth = getAuth(app);
+    const secondaryApp = initializeApp(firebaseConfig, "Secondary");
+    const secondaryAuth = getAuth(secondaryApp);
+
+    let scoutModal;
+    document.addEventListener('DOMContentLoaded', () => {
+        scoutModal = new bootstrap.Modal(document.getElementById('scoutModal'));
+    });
+
+    let allScoutsCache = [];
+    let currentScoutDocId = null;
+    let currentScoutData = null;
+    let currentUserRole = 'moderator'; // Default safe
+
+    // --- AUTH & PERMISSIONS ---
+    onAuthStateChanged(auth, async (user) => { 
+        if (!user) window.location.href="index.html"; 
+        else { 
+            // 🔴 CHECK ROLE HERE
+            const uDoc = await getDoc(doc(db, "users", user.email));
+            if(uDoc.exists()) {
+                currentUserRole = uDoc.data().role;
+                document.getElementById('userRoleDisplay').innerText = currentUserRole.toUpperCase();
+                
+                // Hide features for Moderator
+                if(currentUserRole === 'moderator') {
+                    document.getElementById('nav-staff').style.display = 'none'; // Hide sidebar link
+                    document.getElementById('view-staff').innerHTML = ""; // Remove content
+                    document.getElementById('btn-emergency').style.display = 'none'; // Hide broadcast
+                }
+            }
+            initListeners(); 
+        } 
+    });
+
+    window.logout = () => signOut(auth).then(() => window.location.href = "index.html");
+
+    function initListeners() { 
+        loadUsers(); loadEvents(); loadLogs(); loadStats(); listenForEmergencies(); 
+        onSnapshot(collection(db, "scouts"), (snap) => {
+            allScoutsCache = [];
+            snap.forEach(doc => allScoutsCache.push({ ...doc.data(), _docId: doc.id }));
+            document.getElementById('statTotal').innerText = allScoutsCache.length;
+            if(document.getElementById('view-directory').style.display === 'block') filterScouts(); 
+        });
+    }
+
+    // --- DIRECTORY ---
+    window.filterScouts = function() {
+        const term = document.getElementById('searchInput').value.toLowerCase();
+        const container = document.getElementById('scoutGrid');
+        container.innerHTML = "";
+        const filtered = allScoutsCache.filter(s => s.name.toLowerCase().includes(term) || s.id.toLowerCase().includes(term));
+        
+        if(filtered.length === 0) { container.innerHTML = `<div class="col-12 text-center text-muted py-5">No results found.</div>`; return; }
+        
+        filtered.slice(0, 50).forEach(s => {
+            let isMissing = s.isMissing ? "missing-scout" : "";
+            let btnMissColor = s.isMissing ? "btn-danger text-white" : "btn-outline-warning";
+            let btnMissText = s.isMissing ? "Found?" : "Missing?";
+            let avatarColor = s.isMissing ? "bg-danger text-white" : "bg-primary bg-opacity-10 text-primary";
+
+            container.innerHTML += `
+            <div class="col-md-4 col-lg-3 animate__animated animate__fadeIn">
+                <div class="card p-3 shadow-sm scout-tile ${isMissing}">
+                    <div class="d-flex align-items-center mb-3" onclick="openScoutProfile('${s._docId}')">
+                        <div class="${avatarColor} d-flex align-items-center justify-content-center me-3" style="width:50px; height:50px; border-radius:50%; font-weight:bold; font-size:1.2rem;">${s.name.charAt(0)}</div>
+                        <div class="overflow-hidden">
+                            <h6 class="fw-bold mb-0 text-truncate">${s.name}</h6>
+                            <small class="text-muted d-block">${s.id}</small>
+                            <span class="badge bg-light text-dark mt-1" style="font-size:0.7rem">${s.troop||'General'}</span>
+                        </div>
+                    </div>
+                    <div class="d-flex gap-2">
+                        <button class="btn btn-sm ${btnMissColor} w-100 fw-bold" onclick="confirmMissing('${s._docId}', ${s.isMissing})">
+                            <i class="bi bi-exclamation-triangle"></i> ${btnMissText}
+                        </button>
+                        <button class="btn btn-sm btn-light-danger" onclick="confirmDeleteScout('${s._docId}')">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>`;
+        });
+    }
+
+    // --- ACTIONS ---
+    window.confirmMissing = async function(docId, currentStatus) {
+        let action = currentStatus ? "Mark as Safe/Found?" : "Mark as MISSING?";
+        let icon = currentStatus ? "success" : "warning";
+        const res = await Swal.fire({title: action, icon: icon, showCancelButton: true, confirmButtonText: 'Yes', confirmButtonColor: currentStatus?'#38a169':'#e53e3e'});
+        if(res.isConfirmed) {
+            await updateDoc(doc(db, "scouts", docId), { isMissing: !currentStatus });
+            Swal.fire('Updated', '', 'success');
+        }
+    }
+
+    window.confirmDeleteScout = async function(docId) {
+        if(currentUserRole !== 'admin') return Swal.fire('Access Denied', 'Only Admins can delete users.', 'error');
+        const res = await Swal.fire({title: 'Delete Scout?', text: "This cannot be undone!", icon: 'warning', showCancelButton: true, confirmButtonText: 'Delete', confirmButtonColor: '#d33'});
+        if(res.isConfirmed) {
+            await deleteDoc(doc(db, "scouts", docId));
+            Swal.fire('Deleted!', 'Scout removed.', 'success');
+        }
+    }
+
+    // --- POPUP PROFILE ---
+    window.openScoutProfile = async function(docId) {
+        currentScoutDocId = docId;
+        currentScoutData = allScoutsCache.find(s => s._docId === docId);
+        if(!currentScoutData) return;
+
+        document.getElementById('mName').innerText = currentScoutData.name;
+        document.getElementById('mID').innerText = currentScoutData.id;
+        document.getElementById('mTroop').innerText = currentScoutData.troop;
+        document.getElementById('mDistrict').innerText = currentScoutData.district;
+        document.getElementById('mAvatar').innerText = currentScoutData.name.charAt(0);
+        updateMissingBtnUI(currentScoutData.isMissing);
+
+        // Fetch logs
+        const q = query(collection(db, "logs"), where("scoutID", "==", currentScoutData.id), orderBy("timestamp", "desc"), limit(10));
+        const snap = await getDocs(q);
+        let logsHtml = "";
+        if(snap.empty) logsHtml = `<tr><td class="text-center p-3 text-muted">No scan history.</td></tr>`;
+        else snap.forEach(d => {
+            let l = d.data();
+            let time = l.timestamp ? new Date(l.timestamp.seconds*1000).toLocaleString() : "N/A";
+            logsHtml += `<tr><td class="ps-3">${time}</td><td class="fw-bold text-primary">${l.eventName}</td></tr>`;
+        });
+        document.getElementById('mLogTable').innerHTML = logsHtml;
+        document.getElementById('mPoints').innerText = `${snap.size} Activities`;
+        
+        const modalEl = document.getElementById('scoutModal');
+        const modal = new bootstrap.Modal(modalEl);
+        modal.show();
+    }
+
+    function updateMissingBtnUI(isMissing) {
+        const btn = document.getElementById('btnMissing');
+        if(isMissing) { btn.className = "btn btn-danger fw-bold py-2 w-100 animate__animated animate__pulse animate__infinite"; btn.innerHTML = `<i class="bi bi-person-check-fill"></i> FOUND (MARK SAFE)`; } 
+        else { btn.className = "btn btn-outline-danger fw-bold py-2 w-100"; btn.innerHTML = `<i class="bi bi-exclamation-triangle-fill"></i> MARK AS MISSING`; }
+    }
+
+    window.toggleMissingStatus = async function() {
+        if(!currentScoutDocId) return;
+        let newStatus = !currentScoutData.isMissing;
+        await updateDoc(doc(db, "scouts", currentScoutDocId), { isMissing: newStatus });
+        currentScoutData.isMissing = newStatus; updateMissingBtnUI(newStatus); filterScouts();
+    }
+
+    window.deleteScoutProfile = async function() {
+        if(currentUserRole !== 'admin') return Swal.fire('Denied', 'Admin only', 'error');
+        if(!currentScoutDocId) return;
+        const res = await Swal.fire({title:'Delete?', text:"Cannot undo!", icon:'warning', showCancelButton:true, confirmButtonColor:'#d33', confirmButtonText:'Delete'});
+        if(res.isConfirmed) { await deleteDoc(doc(db, "scouts", currentScoutDocId)); const m = bootstrap.Modal.getInstance(document.getElementById('scoutModal')); m.hide(); Swal.fire('Deleted','','success'); }
+    }
+
+    // --- EVENTS ---
+    window.saveNewEvent = async function() {
+        const name = document.getElementById('evtName').value; const type = document.getElementById('evtType').value; const actionStr = document.getElementById('evtActions').value; const points = document.getElementById('evtPoints').value || 0;
+        if(!name || !actionStr) return Swal.fire({icon:'warning', title:'Required', text:'Name & Buttons are needed'});
+        const actions = actionStr.split(',').map(s => s.trim()).filter(s => s.length > 0);
+        try { await addDoc(collection(db, "events"), { name, type, actions, points: Number(points), active: true, createdAt: serverTimestamp() }); Swal.fire({icon:'success', title:'Success', timer:1500, showConfirmButton:false}); document.getElementById('evtName').value = ""; document.getElementById('evtActions').value = ""; } catch(err) { Swal.fire({icon:'error', title:'Error', text:err.message}); }
+    }
+    function loadEvents() {
+        onSnapshot(collection(db, "events"), (snap) => {
+            if(snap.empty) { document.getElementById('eventsList').innerHTML = "<div class='text-center text-muted py-5'>No active events.</div>"; return; }
+            let events = []; snap.forEach(doc => events.push({id: doc.id, ...doc.data()}));
+            events.sort((a,b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
+            let html = "";
+            events.forEach(e => {
+                let btns = e.actions ? e.actions.map(a => `<span class="badge bg-light text-dark border me-1">${a}</span>`).join('') : "";
+                html += `<div class="p-3 border rounded-3 mb-2 bg-white d-flex justify-content-between align-items-center animate__animated animate__fadeIn shadow-sm"><div><h6 class="fw-bold mb-1 text-dark">${e.name}</h6><div class="mb-1"><span class="badge bg-primary bg-opacity-10 text-primary border-0 me-2">${e.type}</span></div><div class="small text-muted">Buttons: ${btns}</div></div><button onclick="deleteEvent('${e.id}')" class="btn btn-light-danger"><i class="bi bi-trash"></i></button></div>`;
+            });
+            document.getElementById('eventsList').innerHTML = html;
+        }, (error) => { document.getElementById('eventsList').innerHTML = `<div class="alert alert-danger">Error: ${error.message}</div>`; });
+    }
+    window.deleteEvent = async (id) => { if(confirm("Delete event?")) await deleteDoc(doc(db, "events", id)); }
+
+    // --- REGISTRATION ---
+    window.recentScouts = [];
+    window.processRegistration = async function() {
+        const troopNum = document.getElementById('troopNumberInput').value.trim(); const text = document.getElementById('bulkInput').value; 
+        if(!troopNum || !text.trim()) return Swal.fire({icon:'warning', title:'Missing Info'});
+        const lines = text.trim().split('\n'); window.recentScouts=[]; document.getElementById('regProgress').style.display='flex';
+        let idCounter = 1; try { const c = await getDoc(doc(db, "system", "scout_counter")); if(c.exists()) idCounter = c.data().val + 1; else await setDoc(doc(db, "system", "scout_counter"), { val: 0 }); } catch(e){}
+        let count=0;
+        for(let line of lines){
+            let p = line.split(','); if(p.length >= 1 && p[0].trim() !== "") {
+                let name = p[0].trim(); let troop = p[1]?p[1].trim():`Troop ${troopNum}`; let district = p[2]?p[2].trim():"";
+                let serial = idCounter.toString().padStart(3, '0');
+                let displayID = `KG${troopNum}/${serial}`; let safeDocID = `KG${troopNum}_${serial}`; 
+                let scoutData = { name, troop, district, id: displayID, docId: safeDocID, troopNum, regDate: serverTimestamp(), isMissing: false };
+                await setDoc(doc(db, "scouts", safeDocID), scoutData); window.recentScouts.push(scoutData); idCounter++;
+            }
+            count++; document.querySelector('.progress-bar').style.width = (count/lines.length)*100+"%";
+        }
+        await setDoc(doc(db, "system", "scout_counter"), { val: idCounter-1 });
+        document.getElementById('regProgress').style.display='none'; document.getElementById('btnPrint').disabled=false; showPreview(); Swal.fire({icon:'success', title:'Complete', text:`${window.recentScouts.length} IDs Generated!`});
+    }
+    function showPreview(){ let h="";window.recentScouts.forEach(s=>{h+=`<div class="col-4"><div class="border rounded p-2 bg-white small text-center shadow-sm"><div class="fw-bold text-primary">${s.id}</div><div class="text-truncate text-muted">${s.name}</div></div></div>`});document.getElementById('stickerPreview').innerHTML=h;}
+    window.generatePDF = function() {
+        const { jsPDF } = window.jspdf; const doc = new jsPDF(); let x=10,y=10,w=45,h=65,c=0,r=0;
+        const qrContainer = document.getElementById('qr-hidden');
+        window.recentScouts.forEach((s,i)=>{
+            if(i>0 && i%16===0){doc.addPage();c=0;r=0;} let cx=x+(c*(w+2)), cy=y+(r*(h+2));
+            doc.setLineWidth(0.1);doc.setLineDash([1,1],0);doc.rect(cx,cy,w,h);doc.setLineDash([]);
+            doc.setFontSize(9);doc.setFont("helvetica","bold");doc.text("SCOUT PASS",cx+w/2,cy+6,{align:"center"});
+            qrContainer.innerHTML=''; new QRCode(qrContainer,{text:s.id,width:100,height:100});
+            let qrC=qrContainer.querySelector('canvas'); let imgData=qrC?qrC.toDataURL("image/png"):qrContainer.querySelector('img').src;
+            if(imgData) doc.addImage(imgData,'PNG',cx+(w-25)/2,cy+10,25,25);
+            doc.setFontSize(12);doc.text(s.id,cx+w/2,cy+42,{align:"center"});doc.setFontSize(8);doc.setFont("helvetica","normal");doc.text(s.name.substring(0,18),cx+w/2,cy+48,{align:"center"});doc.setFontSize(7);doc.text(s.troop.substring(0,25),cx+w/2,cy+53,{align:"center"});doc.text(s.district.toUpperCase(),cx+w/2,cy+57,{align:"center"});
+            c++;if(c>=4){c=0;r++;}
+        }); doc.save('Scout_IDs.pdf');
+    }
+
+    // --- STAFF ---
+    window.createNewUser = async function() {
+        const e=document.getElementById('newEmail').value;const p=document.getElementById('newPass').value;const r=document.getElementById('newRole').value;
+        if(!e||!p)return Swal.fire('Error','Missing info','error');
+        try{await createUserWithEmailAndPassword(secondaryAuth,e,p);await setDoc(doc(db,"users",e),{email:e,role:r,createdAt:serverTimestamp()});await signOut(secondaryAuth);Swal.fire('Success','Created','success');}
+        catch(err){if(err.code==='auth/email-already-in-use'){await setDoc(doc(db,"users",e),{email:e,role:r,createdAt:serverTimestamp()});Swal.fire('Synced','User added','success');}else Swal.fire('Error',err.message,'error');}
+    }
+    function loadUsers(){onSnapshot(collection(db,"users"),s=>{let h="";s.forEach(d=>{let u=d.data();h+=`<tr><td class="fw-bold text-dark">${u.email}</td><td><span class="badge bg-light text-dark border">${u.role}</span></td><td class="text-end"><button class="btn btn-light-danger" onclick="deleteUser('${d.id}')">X</button></td></tr>`});document.getElementById('usersTableBody').innerHTML=h;});}
+    window.deleteUser=async(id)=>{if(confirm("Remove?"))await deleteDoc(doc(db,"users",id));}
+
+    // --- UTILS ---
+    function loadLogs(){onSnapshot(query(collection(db,"logs"),orderBy("timestamp","desc"),limit(50)),s=>{let h="";s.forEach(d=>{let l=d.data();h+=`<tr><td class="small text-muted">${l.timestamp?new Date(l.timestamp.seconds*1000).toLocaleTimeString():""}</td><td class="fw-bold">${l.scoutID}</td><td>${l.eventName}</td><td>${l.scannedBy}</td></tr>`});document.getElementById('logsTableBody').innerHTML=h;});}
+    function loadStats(){onSnapshot(collection(db,"scouts"),s=>document.getElementById('statTotal').innerText=s.size);}
+    window.triggerEmergency=async()=>{const{value:t}=await Swal.fire({title:'Broadcast',input:'text',confirmButtonText:'Send Alert', confirmButtonColor:'#ef4444'});if(t)await setDoc(doc(db,"system","broadcast"),{message:t,timestamp:serverTimestamp()});}
+    function listenForEmergencies(){onSnapshot(doc(db,"system","broadcast"),d=>{if(d.exists()&&d.data().message)Swal.fire({icon:'warning',title:'Alert',text:d.data().message,confirmButtonColor:'#ef4444'})});}
+    window.loadView=(v,el)=>{
+        document.querySelectorAll('.view-section').forEach(d=>d.style.display='none'); document.getElementById('view-'+v).style.display='block';
+        document.querySelectorAll('.nav-link').forEach(l=>l.classList.remove('active')); if(el)el.classList.add('active');
+        const t = {'dashboard':'Overview','events':'Event Manager','staff':'Staff Management','registration':'Bulk Registration','logs':'System Logs', 'directory':'Directory'};
+        document.getElementById('pageTitle').innerText = t[v];
+        if(v === 'directory') filterScouts(); 
+    }
+</script>
+</body>
+</html>
