@@ -4,36 +4,55 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Scout Admin Dashboard</title>
+    
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+    
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
     
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    
     <style>
+        /* THEME & UTILS */
         body { background-color: #f0f2f5; font-family: 'Poppins', sans-serif; color: #4b5563; }
         .btn, .nav-link, .scout-tile { cursor: pointer; user-select: none; }
+        
+        /* Sidebar */
         .sidebar { position: fixed; height: 100vh; width: 260px; background: #fff; padding-top: 30px; border-right: 1px solid #e5e7eb; z-index: 1000; }
         .sidebar h3 { color: #7c3aed; text-align: center; font-weight: 700; margin-bottom: 40px; }
         .nav-link { color: #6b7280; padding: 12px 25px; margin: 4px 15px; border-radius: 12px; transition: 0.3s; font-weight: 500; }
-        .nav-link:hover, .nav-link.active { background-color: #f3f0ff; color: #7c3aed; font-weight: 600; }
+        .nav-link:hover, .nav-link.active { background-color: #f3f0ff; color: #7c3aed; }
         .nav-link i { margin-right: 12px; font-size: 1.1rem; }
         .main-content { margin-left: 260px; padding: 30px; }
+        
+        /* Cards */
         .card { border: none; background: #fff; border-radius: 16px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.02); }
         .form-control, .form-select { background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 10px; padding: 10px 15px; }
         .form-control:focus { border-color: #7c3aed; box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.1); background: #fff; }
-        .btn-primary { background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%); border: none; border-radius: 10px; padding: 10px 20px; font-weight: 500; transition: 0.3s; }
-        .btn-primary:hover { transform: translateY(-2px); }
+        
+        /* Buttons */
+        .btn-primary { 
+            background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%); 
+            border: none; border-radius: 10px; padding: 10px 20px; 
+            font-weight: 500; transition: 0.3s; 
+            box-shadow: 0 4px 10px rgba(124, 58, 237, 0.3); 
+        }
+        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 6px 15px rgba(124, 58, 237, 0.4); }
+        
         .btn-light-danger { background: #fff5f5; color: #e53e3e; border: none; border-radius: 10px; }
         .btn-light-danger:hover { background: #fed7d7; color: #c53030; }
+
         .btn-emergency { border: 2px solid #ef4444; color: #ef4444; background: transparent; border-radius: 50px; font-weight: 600; padding: 8px 24px; }
         .btn-emergency:hover { background: #ef4444; color: #fff; }
+
+        /* Tiles & Badges */
         .scout-tile:hover { transform: translateY(-3px); border-color: #7c3aed; }
         .missing-scout { border: 2px solid #ef4444 !important; background: #fef2f2 !important; animation: pulseRed 2s infinite; }
         @keyframes pulseRed { 0% {box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4);} 70% {box-shadow: 0 0 0 10px rgba(239, 68, 68, 0);} 100% {box-shadow: 0 0 0 0 rgba(239, 68, 68, 0);} }
+
+        /* Action Badges */
+        .badge-in { background-color: #d1fae5; color: #065f46; }
+        .badge-out { background-color: #fee2e2; color: #991b1b; }
+        .badge-other { background-color: #e0e7ff; color: #3730a3; }
     </style>
 </head>
 <body>
@@ -142,7 +161,19 @@
     <div id="view-logs" class="view-section animate__animated animate__fadeIn" style="display:none;">
         <div class="card p-4">
             <h5 class="fw-bold mb-4">Scan Activity</h5>
-            <div class="table-responsive"><table class="table table-hover align-middle"><thead><tr><th class="ps-3 border-0 rounded-start">Time</th><th>ID</th><th>Event</th><th class="pe-3 rounded-end">Scanner</th></tr></thead><tbody id="logsTableBody"></tbody></table></div>
+            <div class="table-responsive">
+                <table class="table table-hover align-middle">
+                    <thead>
+                        <tr>
+                            <th class="ps-3 border-0 rounded-start">Time</th>
+                            <th>ID</th>
+                            <th>Event</th>
+                            <th>Action</th> <th class="pe-3 rounded-end">Scanner</th>
+                        </tr>
+                    </thead>
+                    <tbody id="logsTableBody"></tbody>
+                </table>
+            </div>
         </div>
     </div>
 </div>
@@ -183,7 +214,11 @@
     </div>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
     import { getFirestore, collection, doc, setDoc, deleteDoc, addDoc, onSnapshot, serverTimestamp, getDoc, query, orderBy, limit, where, getDocs, updateDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
@@ -213,23 +248,20 @@
     let allScoutsCache = [];
     let currentScoutDocId = null;
     let currentScoutData = null;
-    let currentUserRole = 'moderator'; // Default safe
+    let currentUserRole = 'moderator'; 
 
-    // --- AUTH & PERMISSIONS ---
     onAuthStateChanged(auth, async (user) => { 
         if (!user) window.location.href="index.html"; 
         else { 
-            // 🔴 CHECK ROLE HERE
             const uDoc = await getDoc(doc(db, "users", user.email));
             if(uDoc.exists()) {
                 currentUserRole = uDoc.data().role;
                 document.getElementById('userRoleDisplay').innerText = currentUserRole.toUpperCase();
                 
-                // Hide features for Moderator
                 if(currentUserRole === 'moderator') {
-                    document.getElementById('nav-staff').style.display = 'none'; // Hide sidebar link
-                    document.getElementById('view-staff').innerHTML = ""; // Remove content
-                    document.getElementById('btn-emergency').style.display = 'none'; // Hide broadcast
+                    document.getElementById('nav-staff').style.display = 'none'; 
+                    document.getElementById('view-staff').innerHTML = ""; 
+                    document.getElementById('btn-emergency').style.display = 'none'; 
                 }
             }
             initListeners(); 
@@ -307,7 +339,7 @@
         }
     }
 
-    // --- POPUP PROFILE ---
+    // --- POPUP ---
     window.openScoutProfile = async function(docId) {
         currentScoutDocId = docId;
         currentScoutData = allScoutsCache.find(s => s._docId === docId);
@@ -320,7 +352,6 @@
         document.getElementById('mAvatar').innerText = currentScoutData.name.charAt(0);
         updateMissingBtnUI(currentScoutData.isMissing);
 
-        // Fetch logs
         const q = query(collection(db, "logs"), where("scoutID", "==", currentScoutData.id), orderBy("timestamp", "desc"), limit(10));
         const snap = await getDocs(q);
         let logsHtml = "";
@@ -333,9 +364,7 @@
         document.getElementById('mLogTable').innerHTML = logsHtml;
         document.getElementById('mPoints').innerText = `${snap.size} Activities`;
         
-        const modalEl = document.getElementById('scoutModal');
-        const modal = new bootstrap.Modal(modalEl);
-        modal.show();
+        scoutModal.show();
     }
 
     function updateMissingBtnUI(isMissing) {
@@ -355,7 +384,7 @@
         if(currentUserRole !== 'admin') return Swal.fire('Denied', 'Admin only', 'error');
         if(!currentScoutDocId) return;
         const res = await Swal.fire({title:'Delete?', text:"Cannot undo!", icon:'warning', showCancelButton:true, confirmButtonColor:'#d33', confirmButtonText:'Delete'});
-        if(res.isConfirmed) { await deleteDoc(doc(db, "scouts", currentScoutDocId)); const m = bootstrap.Modal.getInstance(document.getElementById('scoutModal')); m.hide(); Swal.fire('Deleted','','success'); }
+        if(res.isConfirmed) { await deleteDoc(doc(db, "scouts", currentScoutDocId)); scoutModal.hide(); Swal.fire('Deleted','','success'); }
     }
 
     // --- EVENTS ---
@@ -427,8 +456,29 @@
     function loadUsers(){onSnapshot(collection(db,"users"),s=>{let h="";s.forEach(d=>{let u=d.data();h+=`<tr><td class="fw-bold text-dark">${u.email}</td><td><span class="badge bg-light text-dark border">${u.role}</span></td><td class="text-end"><button class="btn btn-light-danger" onclick="deleteUser('${d.id}')">X</button></td></tr>`});document.getElementById('usersTableBody').innerHTML=h;});}
     window.deleteUser=async(id)=>{if(confirm("Remove?"))await deleteDoc(doc(db,"users",id));}
 
-    // --- UTILS ---
-    function loadLogs(){onSnapshot(query(collection(db,"logs"),orderBy("timestamp","desc"),limit(50)),s=>{let h="";s.forEach(d=>{let l=d.data();h+=`<tr><td class="small text-muted">${l.timestamp?new Date(l.timestamp.seconds*1000).toLocaleTimeString():""}</td><td class="fw-bold">${l.scoutID}</td><td>${l.eventName}</td><td>${l.scannedBy}</td></tr>`});document.getElementById('logsTableBody').innerHTML=h;});}
+    // --- UTILS & LOGS (UPDATED) ---
+    function loadLogs(){
+        onSnapshot(query(collection(db,"logs"),orderBy("timestamp","desc"),limit(50)),s=>{
+            let h="";
+            s.forEach(d=>{
+                let l=d.data();
+                
+                // Badge Logic
+                let badgeClass = "badge-other";
+                if(l.action === "IN" || l.action.includes("IN")) badgeClass = "badge-in";
+                else if(l.action === "OUT" || l.action.includes("OUT")) badgeClass = "badge-out";
+
+                h+=`<tr>
+                    <td class="ps-3 text-muted small fw-bold">${l.timestamp?new Date(l.timestamp.seconds*1000).toLocaleTimeString():""}</td>
+                    <td class="fw-bold">${l.scoutID}</td>
+                    <td>${l.eventName}</td>
+                    <td><span class="badge ${badgeClass}">${l.action}</span></td> <td class="pe-3 text-secondary small">${l.scannedBy}</td>
+                </tr>`;
+            });
+            document.getElementById('logsTableBody').innerHTML=h;
+        });
+    }
+    
     function loadStats(){onSnapshot(collection(db,"scouts"),s=>document.getElementById('statTotal').innerText=s.size);}
     window.triggerEmergency=async()=>{const{value:t}=await Swal.fire({title:'Broadcast',input:'text',confirmButtonText:'Send Alert', confirmButtonColor:'#ef4444'});if(t)await setDoc(doc(db,"system","broadcast"),{message:t,timestamp:serverTimestamp()});}
     function listenForEmergencies(){onSnapshot(doc(db,"system","broadcast"),d=>{if(d.exists()&&d.data().message)Swal.fire({icon:'warning',title:'Alert',text:d.data().message,confirmButtonColor:'#ef4444'})});}
