@@ -3,185 +3,83 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Keboree Scanner</title>
+    <title>Scanner Pro v2</title>
     
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
-    
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
     
     <style>
-        /* --- APP THEME --- */
-        body { background-color: #f8f9fa; font-family: 'Inter', sans-serif; color: #333; height: 100vh; overflow: hidden; }
+        body { margin: 0; background: #000; font-family: 'Poppins', sans-serif; height: 100vh; overflow: hidden; color: white; }
         
-        /* Containers */
-        .screen { position: absolute; top: 0; left: 0; width: 100%; height: 100%; overflow-y: auto; padding: 20px; background: #f8f9fa; display: none; flex-direction: column; }
-        .screen.active { display: flex; }
+        /* Camera Feed */
+        #reader { width: 100%; height: 100%; object-fit: cover; position: absolute; z-index: 1; background: #000; }
         
-        /* 1. HOME SCREEN */
-        .header-title { font-weight: 700; color: #0d6efd; text-align: center; margin-top: 20px; letter-spacing: 1px; text-transform: uppercase; }
+        /* UI Layer */
+        .ui-layer { position: absolute; width: 100%; height: 100%; z-index: 10; display: flex; flex-direction: column; justify-content: space-between; padding: 20px; box-sizing: border-box; pointer-events: none; }
         
-        /* Camera Box */
-        .camera-wrapper {
-            margin: 30px auto; width: 280px; height: 280px; background: #1a1a1a;
-            border-radius: 25px; overflow: hidden; position: relative;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.15); border: 4px solid #fff;
-            display: flex; align-items: center; justify-content: center;
-        }
-        #reader { width: 100%; height: 100%; object-fit: cover; }
-        .cam-placeholder { color: #555; font-size: 3rem; }
+        /* Interactive Elements (Enable Clicks) */
+        .pointer-events-auto { pointer-events: auto; }
+
+        /* Top Bar */
+        .top-bar { background: rgba(0,0,0,0.7); padding: 12px; border-radius: 50px; backdrop-filter: blur(10px); display: flex; gap: 10px; border: 1px solid rgba(255,255,255,0.1); }
+        .event-select { background: transparent; border: none; color: white; width: 100%; font-weight: 600; outline: none; }
+        .event-select option { background: #333; }
+
+        /* Scanner Box */
+        .scan-box { flex-grow: 1; display: flex; align-items: center; justify-content: center; position: relative; }
+        .frame { width: 260px; height: 260px; border: 2px solid rgba(255,255,255,0.3); border-radius: 25px; position: relative; box-shadow: 0 0 0 100vmax rgba(0,0,0,0.5); }
+        .frame::after { content: ''; position: absolute; inset: 20px; border: 2px dashed rgba(255,255,255,0.2); border-radius: 15px; }
         
-        /* Input Cards */
-        .input-card { background: #fff; padding: 20px; border-radius: 20px; box-shadow: 0 4px 20px rgba(0,0,0,0.05); margin-bottom: 20px; }
-        .form-label { font-weight: 600; font-size: 0.85rem; color: #6c757d; margin-bottom: 5px; }
-        .form-control, .form-select { 
-            border: 2px solid #f0f0f0; border-radius: 12px; padding: 12px; font-weight: 500; font-size: 1rem;
-        }
-        .form-control:focus, .form-select:focus { border-color: #0d6efd; box-shadow: none; background: #fff; }
+        /* Loading/Error Text */
+        .status-msg { position: absolute; top: 60%; width: 100%; text-align: center; color: rgba(255,255,255,0.7); font-size: 0.9rem; text-shadow: 0 2px 4px black; }
 
-        /* Main Button */
-        .btn-scan {
-            width: 100%; background: #0d6efd; color: white; border: none; padding: 18px;
-            font-size: 1.1rem; font-weight: 700; border-radius: 50px;
-            box-shadow: 0 8px 20px rgba(13, 110, 253, 0.3); transition: 0.2s; text-transform: uppercase;
-        }
-        .btn-scan:active { transform: scale(0.98); background: #0b5ed7; }
+        /* Controls */
+        .controls { display: flex; justify-content: center; gap: 20px; padding-bottom: 30px; }
+        .btn-circle { width: 60px; height: 60px; border-radius: 50%; border: none; background: rgba(255,255,255,0.2); color: white; font-size: 1.5rem; backdrop-filter: blur(5px); display: flex; align-items: center; justify-content: center; transition: 0.2s; }
+        .btn-circle:active { background: white; color: black; }
+        .btn-start { background: #00b894; color: white; width: auto; padding: 0 30px; border-radius: 30px; font-weight: bold; font-size: 1rem; display: none; } /* Hidden by default */
 
-        /* 2. DETAILS SCREEN */
-        .details-header { display: flex; align-items: center; margin-bottom: 30px; }
-        .btn-back { background: #f0f0f0; border: none; width: 40px; height: 40px; border-radius: 50%; color: #333; font-weight: bold; }
-        
-        .profile-section { text-align: center; margin-bottom: 30px; }
-        .avatar-circle { 
-            width: 100px; height: 100px; background: #e9ecef; border-radius: 50%; margin: 0 auto 15px; 
-            display: flex; align-items: center; justify-content: center; font-size: 2.5rem; color: #6c757d;
-            border: 4px solid #fff; box-shadow: 0 5px 15px rgba(0,0,0,0.1);
-        }
-        .scout-name { font-weight: 700; font-size: 1.5rem; margin: 0; color: #212529; }
-        .scout-meta { color: #6c757d; font-size: 0.95rem; }
-
-        .action-list { display: flex; flex-direction: column; gap: 12px; }
-        .btn-action { 
-            width: 100%; padding: 15px; border-radius: 50px; font-weight: 600; border: 2px solid transparent; 
-            font-size: 1rem; transition: 0.2s;
-        }
-        .btn-primary-action { background: #0d6efd; color: #fff; box-shadow: 0 4px 15px rgba(13, 110, 253, 0.2); }
-        .btn-secondary-action { background: #fff; border-color: #dee2e6; color: #495057; }
-        .btn-cancel-text { background: transparent; color: #adb5bd; margin-top: 10px; }
-
-        /* 3. MISSING SCREEN (Red) */
-        .screen-missing { background-color: #dc3545; color: white; text-align: center; justify-content: center; }
-        .missing-icon { font-size: 80px; margin-bottom: 10px; animation: pulse 1s infinite; }
-        .missing-title { font-weight: 800; font-size: 2rem; line-height: 1.2; margin-bottom: 30px; text-transform: uppercase; }
-        .missing-card { background: rgba(0,0,0,0.2); border-radius: 20px; padding: 30px; margin-bottom: 40px; }
-        .btn-dismiss { background: white; color: #dc3545; border-radius: 50px; padding: 15px 40px; font-weight: 700; width: 100%; border: none; }
-
-        /* 4. BROADCAST SCREEN (Yellow) */
-        .screen-broadcast { background-color: #ffc107; color: #212529; text-align: center; justify-content: center; }
-        .broadcast-card { background: white; border-radius: 20px; padding: 30px; margin: 30px 0; text-align: left; box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
-        .btn-ack { background: #212529; color: white; border-radius: 50px; padding: 15px; width: 100%; font-weight: bold; border: none; }
-
-        /* Animations */
-        @keyframes pulse { 0% {transform: scale(1);} 50% {transform: scale(1.1);} 100% {transform: scale(1);} }
+        /* SweetAlert Dark */
+        .swal2-popup { background: #1f1f1f !important; color: white !important; border-radius: 20px !important; }
+        .action-btn { width: 100%; padding: 15px; margin: 5px 0; border-radius: 12px; border: none; font-weight: bold; text-transform: uppercase; }
+        .btn-in { background: #00b894; color: white; }
+        .btn-out { background: #ff7675; color: white; }
     </style>
 </head>
 <body>
 
-    <div id="screen-home" class="screen active">
-        <h4 class="header-title">Keboree Scanner</h4>
-        
-        <div class="camera-wrapper">
-            <div id="reader"></div>
-            <i class="bi bi-camera-fill cam-placeholder" id="camIcon"></i>
-        </div>
+<div id="reader"></div>
 
-        <div class="input-card">
-            <div class="mb-3">
-                <label class="form-label">Event</label>
-                <select id="eventSelect" class="form-select">
-                    <option value="">Loading Events...</option>
-                </select>
-            </div>
-            
-            <div class="mb-0">
-                <label class="form-label">Manual ID</label>
-                <input type="text" id="manualInput" class="form-control" placeholder="Enter ID Manually">
-            </div>
-        </div>
-
-        <div style="margin-top: auto;">
-            <button class="btn-scan" onclick="handleScanButton()">SCAN</button>
-        </div>
+<div class="ui-layer">
+    <div class="top-bar pointer-events-auto">
+        <i class="bi bi-qr-code-scan text-warning ps-2"></i>
+        <select id="eventSelect" class="event-select"><option value="">Loading Events...</option></select>
     </div>
 
-    <div id="screen-details" class="screen">
-        <div class="details-header">
-            <button class="btn-back" onclick="showScreen('home')"><i class="bi bi-arrow-left"></i></button>
-            <h5 class="mb-0 ms-3 fw-bold">Scout Details</h5>
-        </div>
-
-        <div class="profile-section">
-            <div class="avatar-circle" id="dAvatar">A</div>
-            <h2 class="scout-name" id="dName">Alex Johnson</h2>
-            <div class="scout-meta mt-1">ID: <span id="dID">12345678</span></div>
-            <div class="scout-meta"><span id="dTroop">Troop 73</span> • <span id="dDistrict">Redwood</span></div>
-        </div>
-
-        <h6 class="form-label mb-3">Event Actions</h6>
-        <div id="actionContainer" class="action-list">
-            </div>
-
-        <div style="margin-top: auto;">
-            <button class="btn-action btn-cancel-text" onclick="showScreen('home')">Cancel</button>
-        </div>
+    <div class="scan-box">
+        <div class="frame"></div>
+        <div id="statusText" class="status-msg">Initializing Camera...</div>
+        <button id="btnStartManual" class="btn-circle btn-start pointer-events-auto" onclick="startCamera()">TAP TO START</button>
     </div>
 
-    <div id="screen-missing" class="screen screen-missing">
-        <div class="mt-5">
-            <i class="bi bi-lightbulb-fill missing-icon"></i> <h1 class="missing-title">MISSING SCOUT<br>FOUND!</h1>
-        </div>
-
-        <div class="missing-card">
-            <div class="avatar-circle" style="background:#fff; color:#dc3545; border:none;" id="mAvatar">A</div>
-            <h3 class="fw-bold mt-3" id="mName">Alexandre Dumas</h3>
-            <p class="mb-0 opacity-75" id="mDetails">Cimarron Council / Troop 451</p>
-        </div>
-
-        <div style="margin-top: auto;">
-            <button class="btn-dismiss" onclick="ackMissing()">Dismiss</button>
-        </div>
+    <div class="controls pointer-events-auto">
+        <button class="btn-circle" onclick="toggleFlash()"><i class="bi bi-lightning-fill"></i></button>
+        <button class="btn-circle" style="background:rgba(255,50,50,0.4)" onclick="logout()"><i class="bi bi-power"></i></button>
+        <button class="btn-circle" onclick="location.reload()"><i class="bi bi-arrow-clockwise"></i></button>
     </div>
+</div>
 
-    <div id="screen-broadcast" class="screen screen-broadcast">
-        <div class="d-flex align-items-center justify-content-center mb-3">
-            <i class="bi bi-megaphone-fill fs-1 me-2"></i>
-            <h3 class="fw-bold mb-0 text-uppercase">Broadcast Message</h3>
-        </div>
-
-        <div class="broadcast-card animate__animated animate__fadeInUp">
-            <h5 class="fw-bold mb-3">Announcement</h5>
-            <p id="broadcastMsg" style="font-size: 1.1rem; line-height: 1.6;">
-                The closing ceremony has been moved to the main stage at 7:00 PM due to weather.
-            </p>
-            <small class="text-muted" id="broadcastTime">Sent: Just now</small>
-        </div>
-
-        <div style="margin-top: auto;">
-            <button class="btn-ack" onclick="showScreen('home')">Acknowledge</button>
-        </div>
-    </div>
-
-    <audio id="beep" src="data:audio/wav;base64,UklGRl9vT19XQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YU"></audio>
+<audio id="beep" src="data:audio/wav;base64,UklGRl9vT19XQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YU"></audio>
 
 <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-    import { getFirestore, collection, doc, getDoc, addDoc, onSnapshot, serverTimestamp, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+    import { getFirestore, collection, doc, getDoc, addDoc, serverTimestamp, onSnapshot, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
     import { getAuth, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
+    // 🔴 CONFIG
     const firebaseConfig = {
         apiKey: "AIzaSyBsBsKnXv6FgYVk7OLo0XagFSBZgYajuNA",
         authDomain: "qr-system-02---web-based.firebaseapp.com",
@@ -197,32 +95,23 @@
 
     let html5QrCode;
     let selectedEvent = null;
-    let isCameraRunning = false;
-    let currentScout = null;
+    let isScanning = true;
 
-    // --- INIT ---
+    // AUTH CHECK
     onAuthStateChanged(auth, (user) => {
         if (!user) window.location.href = "index.html";
         else {
             loadEvents();
-            listenForBroadcasts();
+            // Start Camera Automatically with Delay
+            setTimeout(() => startCamera(), 1000);
         }
     });
 
-    // --- NAVIGATION ---
-    window.showScreen = function(screenId) {
-        document.querySelectorAll('.screen').forEach(el => el.classList.remove('active'));
-        document.getElementById('screen-' + screenId).classList.add('active');
-        
-        // Stop Camera if leaving home
-        if(screenId !== 'home' && isCameraRunning) stopCamera();
-    }
-
-    // --- EVENTS ---
+    // EVENT LOADER
     function loadEvents() {
         onSnapshot(collection(db, "events"), (snap) => {
             const sel = document.getElementById('eventSelect');
-            sel.innerHTML = '<option value="">Select Event</option>';
+            sel.innerHTML = '<option value="">-- SELECT EVENT --</option>';
             snap.forEach(d => {
                 const e = d.data();
                 if(e.active) {
@@ -234,7 +123,6 @@
                 }
             });
         });
-
         document.getElementById('eventSelect').addEventListener('change', (e) => {
             const opt = e.target.options[e.target.selectedIndex];
             if(e.target.value) selectedEvent = { id:e.target.value, name:opt.text, actions:JSON.parse(opt.dataset.actions) };
@@ -242,183 +130,155 @@
         });
     }
 
-    // --- MAIN SCAN LOGIC ---
-    window.handleScanButton = function() {
-        const manualID = document.getElementById('manualInput').value.trim();
+    // --- 🔥 ROBUST CAMERA START LOGIC ---
+    window.startCamera = async function() {
+        document.getElementById('statusText').innerText = "Accessing Camera...";
+        document.getElementById('btnStartManual').style.display = 'none';
+
+        try {
+            // 1. Get List of Cameras
+            const devices = await Html5Qrcode.getCameras();
+            
+            if (devices && devices.length) {
+                // 2. Try the Back Camera (usually the last one in the list)
+                const cameraId = devices[devices.length - 1].id;
+                
+                html5QrCode = new Html5Qrcode("reader");
+                
+                await html5QrCode.start(
+                    cameraId, // Use ID instead of 'environment'
+                    { fps: 20, qrbox: { width: 250, height: 250 } },
+                    onScanSuccess,
+                    (err) => { /* Scanning... ignore frame errors */ }
+                );
+                
+                document.getElementById('statusText').innerText = "Scanning Active";
+                
+            } else {
+                throw new Error("No cameras found.");
+            }
+
+        } catch (err) {
+            console.error("Cam Error", err);
+            
+            // FALLBACK: Try Generic 'environment' mode if ID method failed
+            try {
+                html5QrCode = new Html5Qrcode("reader");
+                await html5QrCode.start(
+                    { facingMode: "environment" }, 
+                    { fps: 20, qrbox: { width: 250, height: 250 } },
+                    onScanSuccess, 
+                    ()=>{}
+                );
+                document.getElementById('statusText').innerText = "Scanning Active (Fallback)";
+                
+            } catch (err2) {
+                // If EVERYTHING fails
+                document.getElementById('statusText').innerText = "Camera Failed";
+                document.getElementById('btnStartManual').style.display = 'flex'; // Show button to retry
+                
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Camera Access Failed',
+                    text: 'Please allow camera permissions in your browser settings and try again. Error: ' + err2,
+                    confirmButtonText: 'Retry'
+                }).then(() => location.reload());
+            }
+        }
+    }
+
+    // --- SCAN SUCCESS ---
+    async function onScanSuccess(decodedText) {
+        if(!isScanning) return;
         
         if(!selectedEvent) {
-            Swal.fire({icon:'warning', title:'Select Event', text:'Please select an event first.', confirmButtonColor:'#0d6efd'});
+            pauseScan();
+            await Swal.fire({icon:'warning', title:'Choose Event', text:'Select an event first.', background:'#333', color:'#fff'});
+            resumeScan();
             return;
         }
 
-        if(manualID) {
-            // Process Manual ID
-            processScoutID(manualID);
-        } else {
-            // Toggle Camera
-            if(isCameraRunning) stopCamera();
-            else startCamera();
-        }
-    }
-
-    // --- CAMERA (FIXED ERROR) ---
-    function startCamera() {
-        document.getElementById('camIcon').style.display = 'none';
-        html5QrCode = new Html5Qrcode("reader");
-        
-        // 🔥 FIX: Removing 'aspectRatio' constraint to prevent OverconstrainedError
-        const config = { fps: 10, qrbox: { width: 250, height: 250 } };
-        
-        // Try Environment camera first
-        html5QrCode.start({ facingMode: "environment" }, config, onScanSuccess, onScanError)
-        .catch(err => {
-            console.log("Environment cam failed, trying user cam...", err);
-            // Fallback to User camera if Environment fails
-            html5QrCode.start({ facingMode: "user" }, config, onScanSuccess, onScanError)
-            .catch(err2 => {
-                Swal.fire({icon:'error', title:'Camera Error', text: 'Could not start camera.'});
-                stopCamera();
-            });
-        });
-        
-        isCameraRunning = true;
-        document.querySelector('.btn-scan').innerText = "STOP SCANNING";
-        document.querySelector('.btn-scan').style.background = "#dc3545";
-    }
-
-    function stopCamera() {
-        if(html5QrCode) {
-            html5QrCode.stop().then(() => {
-                html5QrCode.clear();
-                document.getElementById('camIcon').style.display = 'block';
-                isCameraRunning = false;
-                document.querySelector('.btn-scan').innerText = "SCAN";
-                document.querySelector('.btn-scan').style.background = "#0d6efd";
-            }).catch(err => console.log(err));
-        }
-    }
-
-    function onScanSuccess(decodedText) {
-        stopCamera();
+        pauseScan();
         document.getElementById('beep').play().catch(()=>{});
         if(navigator.vibrate) navigator.vibrate(200);
-        processScoutID(decodedText);
-    }
 
-    function onScanError(errorMessage) { /* Ignore */ }
-
-    // --- PROCESSING ---
-    async function processScoutID(idText) {
-        Swal.showLoading();
-        
         try {
-            // Logic to find scout (Handle / vs _ issue)
-            let docID = idText.replace('/', '_');
+            // ID Matching Logic
+            let docID = decodedText.replace('/', '_');
             let docSnap = await getDoc(doc(db, "scouts", docID));
             
+            // Fallback Search
             if(!docSnap.exists()) {
-                // Try query
-                const q = query(collection(db, "scouts"), where("id", "==", idText));
+                const q = query(collection(db, "scouts"), where("id", "==", decodedText));
                 const qSnap = await getDocs(q);
                 if(!qSnap.empty) docSnap = qSnap.docs[0];
             }
 
-            Swal.close();
-
-            if(docSnap && docSnap.exists()) {
-                const scout = docSnap.data();
-                currentScout = scout;
-
-                if(scout.isMissing) {
-                    // SHOW MISSING SCREEN
-                    document.getElementById('mAvatar').innerText = scout.name.charAt(0);
-                    document.getElementById('mName').innerText = scout.name;
-                    document.getElementById('mDetails').innerText = `${scout.id} • ${scout.troop}`;
-                    showScreen('missing');
-                } else {
-                    // SHOW DETAILS SCREEN
-                    document.getElementById('dAvatar').innerText = scout.name.charAt(0);
-                    document.getElementById('dName').innerText = scout.name;
-                    document.getElementById('dID').innerText = scout.id;
-                    document.getElementById('dTroop').innerText = scout.troop;
-                    document.getElementById('dDistrict').innerText = scout.district;
-                    
-                    // Render Buttons
-                    const btnContainer = document.getElementById('actionContainer');
-                    btnContainer.innerHTML = "";
-                    
-                    if(selectedEvent.actions && selectedEvent.actions.length > 0) {
-                        selectedEvent.actions.forEach(action => {
-                            // Primary style for first button (Check In usually), Secondary for others
-                            let cls = 'btn-action btn-secondary-action';
-                            if(action.toUpperCase() === 'IN' || action.toUpperCase().includes('CHECK IN')) cls = 'btn-action btn-primary-action';
-                            
-                            btnContainer.innerHTML += `<button onclick="window.submitAction('${action}')" class="${cls}">${action}</button>`;
-                        });
-                    } else {
-                        btnContainer.innerHTML = `<button onclick="window.submitAction('Marked')" class="btn-action btn-primary-action">Mark Attendance</button>`;
-                    }
-                    
-                    showScreen('details');
-                }
-            } else {
-                Swal.fire({icon:'error', title:'Not Found', text:'Scout ID not registered.'});
-            }
+            if(docSnap && docSnap.exists()) showActionModal(docSnap.data());
+            else throw new Error("ID Not Found in DB");
 
         } catch (e) {
-            Swal.close();
-            Swal.fire({icon:'error', title:'Error', text:e.message});
+            await Swal.fire({icon:'error', title:'Error', text: e.message, timer:1500, showConfirmButton:false, background:'#333', color:'#fff'});
+            resumeScan();
         }
     }
 
-    // --- ACTIONS ---
-    window.submitAction = async function(action) {
+    function showActionModal(scout) {
+        let btns = '';
+        if(selectedEvent.actions && selectedEvent.actions.length > 0) {
+            selectedEvent.actions.forEach(a => {
+                let cls = a==='IN'?'btn-in':(a==='OUT'?'btn-out':'btn-light');
+                btns += `<button onclick="window.submitLog('${a}')" class="action-btn ${cls}">${a}</button>`;
+            });
+        } else {
+            btns = `<button onclick="window.submitLog('Present')" class="action-btn btn-light">MARK PRESENT</button>`;
+        }
+
+        let alert = scout.isMissing ? `<div class="bg-danger text-white p-2 rounded mb-2 text-center fw-bold">⚠️ MISSING SCOUT</div>` : '';
+        window.tempScout = scout;
+
+        Swal.fire({
+            title: scout.name,
+            html: `${alert}<p style="color:#aaa">${scout.id} | ${scout.troop}</p>${btns}<button onclick="window.cancelScan()" class="btn btn-link text-white mt-2">Cancel</button>`,
+            showConfirmButton: false,
+            background: '#1a1a1a',
+            color: '#fff',
+            allowOutsideClick: false
+        });
+    }
+
+    window.submitLog = async function(action) {
         Swal.showLoading();
         try {
             await addDoc(collection(db, "logs"), {
-                scoutID: currentScout.id, scoutName: currentScout.name,
+                scoutID: window.tempScout.id, scoutName: window.tempScout.name,
                 eventID: selectedEvent.id, eventName: selectedEvent.name,
                 action: action, scannedBy: auth.currentUser.email, timestamp: serverTimestamp()
             });
             Swal.close();
-            // Success Toast
-            Swal.fire({toast:true, position:'top', icon:'success', title:`${action} Successful`, showConfirmButton:false, timer:1500});
-            
-            // Clear input and go home
-            document.getElementById('manualInput').value = "";
-            showScreen('home');
-            
-        } catch(e) { Swal.fire('Error', e.message, 'error'); }
+            const Toast = Swal.mixin({toast:true, position:'top', showConfirmButton:false, timer:1000, background:'#00b894', color:'#fff'});
+            Toast.fire({icon:'success', title: 'Saved'});
+            resumeScan();
+        } catch(e) { Swal.fire('Error', e.message); resumeScan(); }
     }
 
-    window.ackMissing = function() {
-        // Here you could update the "Missing" status to false automatically if needed
-        showScreen('home');
-    }
-
-    // --- BROADCAST LISTENER ---
-    function listenForBroadcasts() {
-        onSnapshot(doc(db, "system", "broadcast"), (d) => {
-            if(d.exists()) {
-                const data = d.data();
-                // Simple timestamp check to ensure we don't show old alerts on reload
-                // For now, we just show it if message exists
-                if(data.message) {
-                    document.getElementById('broadcastMsg').innerText = data.message;
-                    document.getElementById('broadcastTime').innerText = "Sent: " + new Date(data.timestamp.seconds*1000).toLocaleTimeString();
-                    showScreen('broadcast');
-                }
-            }
-        });
-    }
-
+    function pauseScan() { isScanning = false; html5QrCode.pause(); }
+    function resumeScan() { html5QrCode.resume(); setTimeout(() => isScanning = true, 500); }
+    window.cancelScan = () => { Swal.close(); resumeScan(); }
     window.logout = () => signOut(auth).then(() => window.location.href = "index.html");
     
-    // Attach window functions for HTML access
-    window.handleScanButton = handleScanButton;
-    window.showScreen = showScreen;
-    window.submitAction = submitAction;
-    window.ackMissing = ackMissing;
+    // Flash
+    window.toggleFlash = function() {
+        if(html5QrCode) {
+            html5QrCode.applyVideoConstraints({ advanced: [{ torch: true }] })
+            .catch(() => Swal.fire({toast:true, icon:'info', title:'No Flashlight', position:'center', timer:1500, background:'#333', color:'#fff'}));
+        }
+    }
+    
+    // Attach Global
+    window.startCamera = startCamera;
+    window.submitLog = submitLog;
+    window.cancelScan = window.cancelScan;
 </script>
 </body>
 </html>
