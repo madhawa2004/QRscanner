@@ -4,7 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Scout Admin Dashboard</title>
+    
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+    
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
@@ -22,21 +24,13 @@
         .main-content { margin-left: 260px; padding: 40px; }
         .card { border: none; background: #fff; border-radius: 16px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.02); }
         .btn-primary { background: #8b5cf6; border: none; } .btn-primary:hover { background: #7c3aed; }
-        .stat-card { border-left: 5px solid #8b5cf6; transition: 0.3s; }
-        .stat-card:hover { transform: translateY(-3px); box-shadow: 0 10px 20px rgba(0,0,0,0.05); }
-        .stat-value { font-size: 1.8rem; font-weight: 700; color: #1f2937; }
-        .scout-tile { transition: 0.2s; border: 1px solid transparent; }
-        .scout-tile:hover { transform: translateY(-3px); box-shadow: 0 10px 20px rgba(0,0,0,0.05); }
-        .missing-scout { border: 2px solid #ef4444 !important; background-color: #fff5f5 !important; animation: pulseRed 2s infinite; }
-        @keyframes pulseRed { 0% {box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4);} 100% {box-shadow: 0 0 0 0 rgba(239, 68, 68, 0);} }
-        .badge-in { background-color: #d1fae5; color: #065f46; }
-        .badge-out { background-color: #fee2e2; color: #991b1b; }
-        .badge-other { background-color: #e0e7ff; color: #3730a3; }
+        
+        /* QR Card Styles */
+        .qr-card { border: 1px solid #e5e7eb; border-radius: 10px; padding: 10px; text-align: center; background: #fff; }
+        .qr-card img { margin: 0 auto; display: block; }
     </style>
 </head>
 <body>
-
-<div id="qr-hidden" style="display:none;"></div>
 
 <div class="sidebar">
     <h3>⚜️ SCOUT<span style="color:#222">SYS</span></h3>
@@ -95,6 +89,41 @@
         </div>
     </div>
 
+    <div id="view-registration" class="view-section animate__animated animate__fadeIn" style="display:none;">
+        <div class="card p-4">
+            <h5 class="fw-bold mb-3">Bulk Registration</h5>
+            <div class="row mb-3">
+                <div class="col-md-3">
+                    <label class="small fw-bold text-muted">TROOP NO</label>
+                    <input type="text" id="troopNumberInput" class="form-control fw-bold" placeholder="e.g. 25">
+                </div>
+                <div class="col-md-9">
+                    <label class="small fw-bold text-muted">DATA (Name, Troop Name, District)</label>
+                    <textarea id="bulkInput" class="form-control" rows="3" placeholder="Amal Perera, 25th Kegalle, Kegalle..."></textarea>
+                </div>
+            </div>
+            
+            <div id="regProgress" class="progress mb-3" style="display:none; height:5px;"><div class="progress-bar bg-primary" style="width:0%"></div></div>
+            <button onclick="processRegistration()" class="btn btn-primary w-100 mb-4">Register & Generate IDs</button>
+
+            <hr>
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h5 class="fw-bold m-0">Generated IDs (Preview)</h5>
+                <button id="btnPrint" onclick="generatePDF()" class="btn btn-dark" disabled>Download PDF</button>
+            </div>
+            <div id="stickerPreview" class="row g-3 bg-light p-3 rounded" style="min-height: 200px;">
+                <div class="col-12 text-center text-muted">No IDs generated yet.</div>
+            </div>
+        </div>
+    </div>
+
+    <div id="view-reports" class="view-section animate__animated animate__fadeIn" style="display:none;">
+        <div class="row g-4">
+            <div class="col-md-6"><div class="card p-5 text-center h-100"><i class="bi bi-people-fill display-4 text-primary mb-3"></i><h4>Registered Scouts</h4><button onclick="downloadScoutReport()" class="btn btn-outline-primary fw-bold mt-3">Download PDF</button></div></div>
+            <div class="col-md-6"><div class="card p-5 text-center h-100"><i class="bi bi-list-columns-reverse display-4 text-success mb-3"></i><h4>Full Event Log</h4><button onclick="downloadLogReport()" class="btn btn-outline-success fw-bold mt-3">Download PDF</button></div></div>
+        </div>
+    </div>
+
     <div id="view-staff" class="view-section animate__animated animate__fadeIn" style="display:none;">
         <div class="row">
             <div class="col-md-4">
@@ -110,37 +139,13 @@
         </div>
     </div>
 
-    <div id="view-registration" class="view-section animate__animated animate__fadeIn" style="display:none;">
-        <div class="row">
-            <div class="col-md-5">
-                <div class="card p-4">
-                    <h5 class="fw-bold mb-3">Bulk Registration</h5>
-                    <input type="text" id="troopNumberInput" class="form-control mb-2 fw-bold" placeholder="Troop No (e.g. 25)">
-                    <textarea id="bulkInput" class="form-control mb-3" rows="6" placeholder="Name, Troop, District..."></textarea>
-                    <div id="regProgress" class="progress mb-3" style="display:none; height:5px;"><div class="progress-bar bg-primary" style="width:0%"></div></div>
-                    <button onclick="processRegistration()" class="btn btn-primary w-100">Generate IDs</button>
-                </div>
-            </div>
-            <div class="col-md-7"><div class="card p-4 h-100 text-center"><button id="btnPrint" onclick="generatePDF()" class="btn btn-dark btn-sm mb-3" disabled>Download PDF</button><div id="stickerPreview" class="row g-2 p-2 bg-light rounded" style="height:300px; overflow-y:auto;"></div></div></div>
-        </div>
-    </div>
-
-    <div id="view-reports" class="view-section animate__animated animate__fadeIn" style="display:none;">
-        <div class="row g-4">
-            <div class="col-md-6"><div class="card p-5 text-center h-100"><i class="bi bi-people-fill display-4 text-primary mb-3"></i><h4>Registered Scouts</h4><button onclick="downloadScoutReport()" class="btn btn-outline-primary fw-bold mt-3">Download PDF</button></div></div>
-            <div class="col-md-6"><div class="card p-5 text-center h-100"><i class="bi bi-list-columns-reverse display-4 text-success mb-3"></i><h4>Full Event Log</h4><button onclick="downloadLogReport()" class="btn btn-outline-success fw-bold mt-3">Download PDF</button></div></div>
-        </div>
-    </div>
-
     <div id="view-logs" class="view-section animate__animated animate__fadeIn" style="display:none;">
         <div class="card p-4">
-            <h5 class="fw-bold mb-4">Live Logs (Realtime)</h5>
+            <h5 class="fw-bold mb-4">Live Logs</h5>
             <div class="table-responsive"><table class="table table-hover"><thead class="bg-light"><tr><th class="ps-3">Time</th><th>ID</th><th>Event</th><th>Action</th><th>Scanner</th></tr></thead><tbody id="logsTableBody"></tbody></table></div>
         </div>
     </div>
 </div>
-
-<div class="modal fade" id="scoutModal" tabindex="-1"><div class="modal-dialog modal-dialog-centered"><div class="modal-content border-0 shadow-lg rounded-4"><div class="modal-header bg-primary text-white border-0"><h5 class="modal-title fw-bold">Profile</h5><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div><div class="modal-body p-4 text-center"><div class="bg-light text-primary border border-2 border-primary mx-auto mb-2 d-flex align-items-center justify-content-center" style="width: 80px; height: 80px; font-size: 2rem; border-radius:50%;" id="mAvatar"></div><h4 class="fw-bold mb-0" id="mName">Loading...</h4><span class="badge bg-secondary rounded-pill" id="mID">--</span><div class="row mt-3 text-center"><div class="col-6"><small class="text-muted fw-bold">TROOP</small><div id="mTroop" class="fw-bold">-</div></div><div class="col-6"><small class="text-muted fw-bold">DISTRICT</small><div id="mDistrict" class="fw-bold">-</div></div></div><hr><div class="d-grid gap-2"><button class="btn btn-outline-danger fw-bold" id="btnMissing" onclick="toggleMissingStatus()">MARK AS MISSING</button></div></div><div class="modal-footer bg-light border-0 justify-content-between"><button class="btn btn-link text-danger text-decoration-none" onclick="deleteScoutProfile()">Delete</button><button class="btn btn-dark rounded-pill px-4" data-bs-dismiss="modal">Close</button></div></div></div></div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
@@ -148,10 +153,10 @@
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
     import { getFirestore, collection, doc, setDoc, deleteDoc, addDoc, onSnapshot, serverTimestamp, getDoc, query, where, getDocs, updateDoc, writeBatch } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-    import { getDatabase, ref, onValue, set, remove, push } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+    import { getDatabase, ref, onValue, set, remove, push, limitToLast } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
     import { getAuth, signOut, onAuthStateChanged, createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
-    // 🔴 YOUR CONFIG WITH RTDB URL
+    // 🔴 YOUR CONFIG
     const firebaseConfig = {
         apiKey: "AIzaSyBsBsKnXv6FgYVk7OLo0XagFSBZgYajuNA",
         authDomain: "qr-system-02---web-based.firebaseapp.com",
@@ -169,12 +174,8 @@
     const secondaryApp = initializeApp(firebaseConfig, "Secondary");
     const secondaryAuth = getAuth(secondaryApp);
 
-    let scoutModal;
     let currentUserRole = 'moderator';
-    let currentScoutDocId = null; 
-    let currentScoutData = null;
-
-    document.addEventListener('DOMContentLoaded', () => { scoutModal = new bootstrap.Modal(document.getElementById('scoutModal')); });
+    window.recentScouts = []; // To store newly registered scouts
 
     onAuthStateChanged(auth, async (user) => { 
         if (!user) window.location.href="index.html"; 
@@ -199,49 +200,144 @@
         loadUsers(); loadEvents(); loadLogs(); loadStats(); listenForEmergencies(); 
     }
 
-    // --- HYBRID LOGS & CARDS ---
-    function loadLogs() {
-        const logsRef = ref(rtdb, 'logs');
-        onValue(logsRef, (snapshot) => {
-            const data = snapshot.val();
-            const container = document.getElementById('liveEventCards');
-            
-            if (data) {
-                const logsArr = Object.values(data);
-                document.getElementById('statTotalScans').innerText = logsArr.length;
+    // --- REGISTRATION (FIXED & ROBUST) ---
+    window.processRegistration = async function() {
+        const troop = document.getElementById('troopNumberInput').value.trim();
+        const text = document.getElementById('bulkInput').value.trim();
+        
+        if(!troop) return Swal.fire('Missing Troop No', 'Please enter the Troop Number (e.g. 25)', 'warning');
+        if(!text) return Swal.fire('Empty Data', 'Please paste the scout list.', 'warning');
 
-                // Live Cards Logic
-                let stats = {};
-                logsArr.forEach(l => {
-                    if(!stats[l.eventName]) stats[l.eventName] = { in: 0, out: 0 };
-                    if(l.action.includes('IN')) stats[l.eventName].in++;
-                    if(l.action.includes('OUT')) stats[l.eventName].out++;
-                });
-
-                container.innerHTML = "";
-                Object.keys(stats).forEach(eventName => {
-                    let s = stats[eventName];
-                    let current = s.in - s.out; if(current < 0) current = 0;
-                    container.innerHTML += `
-                    <div class="col-md-3"><div class="card p-3 stat-card"><h6 class="stat-title">${eventName}</h6><div class="d-flex justify-content-between align-items-end mt-2"><div><span class="stat-value text-primary">${current}</span><span class="stat-sub text-muted d-block">Current</span></div><div class="text-end text-muted small"><div class="text-success"><i class="bi bi-arrow-down"></i> ${s.in}</div><div class="text-danger"><i class="bi bi-arrow-up"></i> ${s.out}</div></div></div></div></div>`;
-                });
-
-                // Update Table (Last 50)
-                const recentLogs = logsArr.reverse().slice(0, 50);
-                let h = "";
-                recentLogs.forEach(l => {
-                    let time = new Date(l.timestamp).toLocaleTimeString();
-                    let badgeClass = "badge-other";
-                    if(l.action.includes('IN')) badgeClass = "badge-in";
-                    if(l.action.includes('OUT')) badgeClass = "badge-out";
-                    h += `<tr><td class="ps-3 text-muted small fw-bold">${time}</td><td class="fw-bold">${l.scoutID}</td><td>${l.eventName}</td><td><span class="badge ${badgeClass}">${l.action}</span></td><td class="pe-3 text-secondary small">${l.scannedBy.split('@')[0]}</td></tr>`;
-                });
-                document.getElementById('logsTableBody').innerHTML = h;
-
+        const lines = text.split('\n');
+        document.getElementById('regProgress').style.display='flex';
+        
+        // 1. Get Global Counter (Create if not exists)
+        let idCounter = 1;
+        try {
+            const countDoc = await getDoc(doc(db, "system", "scout_counter"));
+            if(countDoc.exists()) {
+                idCounter = countDoc.data().val + 1;
             } else {
-                container.innerHTML = `<div class="col-12 text-center text-muted">No activity yet.</div>`;
+                await setDoc(doc(db, "system", "scout_counter"), { val: 0 });
+                idCounter = 1;
             }
+        } catch(e) { console.error("Counter Error", e); }
+
+        window.recentScouts = []; // Clear previous batch
+
+        for(let line of lines) {
+            let p = line.split(','); 
+            if(p.length >= 1 && p[0].trim() !== "") {
+                let sID = `KG${troop}/${idCounter.toString().padStart(3, '0')}`; // Display ID
+                let docID = `KG${troop}_${idCounter.toString().padStart(3, '0')}`; // Doc ID (No slash)
+                
+                let scoutData = {
+                    name: p[0].trim(),
+                    troop: p[1] ? p[1].trim() : `Troop ${troop}`,
+                    district: p[2] ? p[2].trim() : "",
+                    id: sID, 
+                    docId: docID,
+                    troopNum: troop,
+                    isMissing: false,
+                    regDate: serverTimestamp()
+                };
+
+                await setDoc(doc(db, "scouts", docID), scoutData);
+                window.recentScouts.push(scoutData);
+                idCounter++;
+            }
+        }
+
+        // Update Counter
+        await setDoc(doc(db, "system", "scout_counter"), { val: idCounter-1 });
+        
+        document.getElementById('regProgress').style.display='none'; 
+        document.getElementById('btnPrint').disabled = false; 
+        
+        // 🔥 Generate Preview & QRs Immediately
+        generatePreview();
+        
+        Swal.fire({icon:'success', title:'Success', text:`Registered ${window.recentScouts.length} Scouts!`});
+    }
+
+    // --- QR PREVIEW GENERATION ---
+    function generatePreview() {
+        const container = document.getElementById('stickerPreview');
+        container.innerHTML = "";
+        
+        window.recentScouts.forEach((s, index) => {
+            // Create Card
+            let col = document.createElement('div');
+            col.className = 'col-md-3 mb-3';
+            col.innerHTML = `
+                <div class="qr-card">
+                    <div id="qr_${index}" class="mb-2"></div>
+                    <h6 class="fw-bold mb-0">${s.id}</h6>
+                    <small class="text-truncate d-block">${s.name}</small>
+                </div>
+            `;
+            container.appendChild(col);
+
+            // Generate QR into the div immediately
+            new QRCode(document.getElementById(`qr_${index}`), {
+                text: s.id,
+                width: 100,
+                height: 100,
+                colorDark : "#000000",
+                colorLight : "#ffffff",
+                correctLevel : QRCode.CorrectLevel.H
+            });
         });
+    }
+
+    // --- PDF GENERATION (FROM PREVIEW IMAGES) ---
+    window.generatePDF = function() {
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF();
+        let x = 10, y = 10, w = 45, h = 65, col = 0, row = 0;
+
+        window.recentScouts.forEach((s, i) => {
+            if(i > 0 && i % 16 === 0) { doc.addPage(); col = 0; row = 0; }
+            
+            let curX = x + (col * (w + 2));
+            let curY = y + (row * (h + 2));
+
+            // Draw Border
+            doc.setLineWidth(0.1);
+            doc.setLineDash([1, 1], 0);
+            doc.rect(curX, curY, w, h);
+            doc.setLineDash([]); // Reset
+
+            // Header
+            doc.setFontSize(9);
+            doc.setFont("helvetica", "bold");
+            doc.text("SCOUT PASS", curX + w/2, curY + 6, { align: "center" });
+
+            // Grab QR Image from DOM (Reliable way)
+            let qrContainer = document.getElementById(`qr_${i}`);
+            let qrImg = qrContainer.querySelector('img');
+            
+            if (qrImg) {
+                doc.addImage(qrImg.src, 'PNG', curX + (w-25)/2, curY + 10, 25, 25);
+            }
+
+            // Text Data
+            doc.setFontSize(11);
+            doc.text(s.id, curX + w/2, curY + 42, { align: "center" });
+            
+            doc.setFontSize(8);
+            doc.setFont("helvetica", "normal");
+            doc.text(s.name.substring(0, 18), curX + w/2, curY + 48, { align: "center" });
+            
+            doc.setFontSize(7);
+            doc.text(s.troop.substring(0, 25), curX + w/2, curY + 53, { align: "center" });
+            doc.text(s.district.toUpperCase(), curX + w/2, curY + 57, { align: "center" });
+
+            col++;
+            if (col >= 4) { col = 0; row++; }
+        });
+
+        doc.save(`ScoutIDs_${new Date().toISOString().slice(0,10)}.pdf`);
     }
 
     // --- SEARCH ---
@@ -296,8 +392,8 @@
                             <div><h6 class="fw-bold mb-0 text-truncate" style="max-width:150px;">${s.name}</h6><small class="text-muted">${s.id}</small></div>
                         </div>
                         <div class="d-flex gap-2">
-                            <button class="btn btn-sm btn-outline-warning w-100" onclick="confirmMissing('${s._docId}', ${s.isMissing})">${btnMissText}</button>
-                            <button class="btn btn-sm btn-light-danger" onclick="deleteScout('${s._docId}')"><i class="bi bi-trash"></i></button>
+                            <button class="btn btn-sm btn-outline-warning w-100" onclick="confirmMissing('${s.docId}', ${s.isMissing})">${btnMissText}</button>
+                            <button class="btn btn-sm btn-light-danger" onclick="deleteScout('${s.docId}')"><i class="bi bi-trash"></i></button>
                         </div>
                     </div>
                 </div>`;
@@ -317,6 +413,51 @@
         if(await Swal.fire({title: 'Delete?', text:"Cannot undo", icon:'warning', showCancelButton:true, confirmButtonColor:'#d33'}).then(r=>r.isConfirmed)) {
             await deleteDoc(doc(db, "scouts", id)); window.performSearch();
         }
+    }
+
+    // --- LOGS & STATS ---
+    function loadLogs() {
+        const logsRef = ref(rtdb, 'logs');
+        onValue(logsRef, (snapshot) => {
+            const data = snapshot.val();
+            const container = document.getElementById('liveEventCards');
+            
+            if (data) {
+                const logsArr = Object.values(data);
+                document.getElementById('statTotalScans').innerText = logsArr.length;
+
+                // Live Cards Logic
+                let stats = {};
+                logsArr.forEach(l => {
+                    if(!stats[l.eventName]) stats[l.eventName] = { in: 0, out: 0 };
+                    if(l.action.includes('IN')) stats[l.eventName].in++;
+                    if(l.action.includes('OUT')) stats[l.eventName].out++;
+                });
+
+                container.innerHTML = "";
+                Object.keys(stats).forEach(eventName => {
+                    let s = stats[eventName];
+                    let current = s.in - s.out; if(current < 0) current = 0;
+                    container.innerHTML += `
+                    <div class="col-md-3"><div class="card p-3 stat-card"><h6 class="stat-title">${eventName}</h6><div class="d-flex justify-content-between align-items-end mt-2"><div><span class="stat-value text-primary">${current}</span><span class="stat-sub text-muted d-block">Current Inside</span></div><div class="text-end text-muted small"><div class="text-success"><i class="bi bi-arrow-down"></i> ${s.in}</div><div class="text-danger"><i class="bi bi-arrow-up"></i> ${s.out}</div></div></div></div></div>`;
+                });
+
+                // Update Table (Last 50)
+                const recentLogs = logsArr.reverse().slice(0, 50);
+                let h = "";
+                recentLogs.forEach(l => {
+                    let time = new Date(l.timestamp).toLocaleTimeString();
+                    let badgeClass = "badge-other";
+                    if(l.action.includes('IN')) badgeClass = "badge-in";
+                    if(l.action.includes('OUT')) badgeClass = "badge-out";
+                    h += `<tr><td class="ps-3 text-muted small fw-bold">${time}</td><td class="fw-bold">${l.scoutID}</td><td>${l.eventName}</td><td><span class="badge ${badgeClass}">${l.action}</span></td><td class="pe-3 text-secondary small">${l.scannedBy.split('@')[0]}</td></tr>`;
+                });
+                document.getElementById('logsTableBody').innerHTML = h;
+
+            } else {
+                container.innerHTML = `<div class="col-12 text-center text-muted">No activity yet.</div>`;
+            }
+        });
     }
 
     // --- REPORTS ---
@@ -349,7 +490,7 @@
         }, {onlyOnce: true});
     }
 
-    // --- OTHER FUNCTIONS ---
+    // --- OTHER ---
     function loadStats(){onSnapshot(collection(db,"scouts"),s=>document.getElementById('statTotal').innerText=s.size);}
     window.saveNewEvent=async()=>{const name=document.getElementById('evtName').value;const type=document.getElementById('evtType').value;const actions=document.getElementById('evtActions').value.split(',');const pts=document.getElementById('evtPoints').value;await addDoc(collection(db,"events"),{name,type,actions,points:pts,active:true,createdAt:serverTimestamp()});Swal.fire('Success','Created','success');}
     function loadEvents(){onSnapshot(collection(db,"events"),snap=>{let h="";snap.forEach(d=>{h+=`<div class="card p-3 mb-2 shadow-sm d-flex flex-row justify-content-between"><div><h6 class="fw-bold mb-0">${d.data().name}</h6></div><button class="btn btn-sm btn-light-danger" onclick="deleteEvent('${d.id}')"><i class="bi bi-trash"></i></button></div>`});document.getElementById('eventsList').innerHTML=h;});}
@@ -357,9 +498,6 @@
     window.createNewUser=async()=>{const e=document.getElementById('newEmail').value;const p=document.getElementById('newPass').value;const r=document.getElementById('newRole').value;await createUserWithEmailAndPassword(secondaryAuth,e,p);await setDoc(doc(db,"users",e),{email:e,role:r});await signOut(secondaryAuth);Swal.fire('Success','Created','success');}
     function loadUsers(){onSnapshot(collection(db,"users"),s=>{let h="";s.forEach(d=>{h+=`<tr><td>${d.data().email}</td><td>${d.data().role}</td><td><button class="btn btn-sm btn-light-danger" onclick="deleteUser('${d.id}')">X</button></td></tr>`});document.getElementById('usersTableBody').innerHTML=h;});}
     window.deleteUser=async(id)=>{if(confirm("Remove?"))await deleteDoc(doc(db,"users",id));}
-    window.processRegistration=async()=>{const t=document.getElementById('troopNumberInput').value;const txt=document.getElementById('bulkInput').value;const l=txt.split('\n');let id=1;try{const c=await getDoc(doc(db,"system","scout_counter"));if(c.exists())id=c.data().val+1;}catch(e){}document.getElementById('regProgress').style.display='flex';window.recentScouts=[];for(let r of l){let p=r.split(',');if(p.length>=1){let sID=`KG${t}/${id.toString().padStart(3,'0')}`;await setDoc(doc(db,"scouts",`KG${t}_${id.toString().padStart(3,'0')}`),{name:p[0],troop:`Troop ${t}`,district:p[2]||'',id:sID,isMissing:false});window.recentScouts.push({id:sID,name:p[0],troop:`Troop ${t}`});id++;}}await setDoc(doc(db,"system","scout_counter"),{val:id-1});document.getElementById('regProgress').style.display='none';document.getElementById('btnPrint').disabled=false;showPreview();Swal.fire('Done','Registered','success');}
-    window.recentScouts=[];function showPreview(){let h="";window.recentScouts.forEach(s=>{h+=`<div class="col-4"><div class="border rounded p-2 bg-white small text-center"><b>${s.id}</b><br>${s.name}</div></div>`});document.getElementById('stickerPreview').innerHTML=h;}
-    window.generatePDF=()=>{const{jsPDF}=window.jspdf;const doc=new jsPDF();let x=10,y=10,w=45,h=65,c=0,r=0;const qc=document.getElementById('qr-hidden');window.recentScouts.forEach((s,i)=>{if(i>0&&i%16===0){doc.addPage();c=0;r=0}let cx=x+(c*(w+2)),cy=y+(r*(h+2));doc.rect(cx,cy,w,h);doc.setFontSize(10);doc.text(s.id,cx+w/2,cy+40,{align:"center"});qc.innerHTML='';new QRCode(qc,{text:s.id,width:100,height:100});let img=qc.querySelector('img').src;doc.addImage(img,'PNG',cx+(w-25)/2,cy+10,25,25);c++;if(c>=4){c=0;r++}});doc.save('IDs.pdf');}
     window.triggerEmergency=async()=>{const{value:t}=await Swal.fire({title:'Broadcast',input:'text'});if(t)await set(ref(rtdb, 'system/broadcast'),{message:t,timestamp:serverTimestamp()});}
     function listenForEmergencies(){onValue(ref(rtdb, 'system/broadcast'),d=>{if(d.exists()&&d.val().message)Swal.fire({icon:'warning',title:'Alert',text:d.val().message})});}
     window.loadView=(v,el)=>{document.querySelectorAll('.view-section').forEach(d=>d.style.display='none');document.getElementById('view-'+v).style.display='block';const t={'dashboard':'Dashboard','events':'Events','staff':'Staff','registration':'Registration','reports':'Reports','directory':'Directory','logs':'Logs'};document.getElementById('pageTitle').innerText=t[v];}
