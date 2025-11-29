@@ -4,249 +4,114 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Parent Portal</title>
-    
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
-    
     <style>
-        /* CLEAN & CUTE THEME */
         body { background-color: #f0f2f5; font-family: 'Poppins', sans-serif; color: #4b5563; }
         .container { max-width: 600px; padding-top: 40px; }
-
-        /* Search Section */
-        .search-wrapper {
-            background: #fff; border-radius: 25px; padding: 40px 30px;
-            box-shadow: 0 15px 40px rgba(108, 92, 231, 0.1);
-            text-align: center; margin-bottom: 30px;
-        }
-        .logo-icon { font-size: 3.5rem; color: #6c5ce7; margin-bottom: 10px; display: inline-block; }
-        
-        .search-input {
-            background: #f8f9fa; border: 2px solid #e9ecef; border-radius: 50px;
-            padding: 15px 25px; font-size: 1.1rem; text-align: center; font-weight: 500;
-            transition: 0.3s;
-        }
-        .search-input:focus { border-color: #6c5ce7; background: #fff; box-shadow: 0 0 0 4px rgba(108, 92, 231, 0.1); }
-
-        /* Search Results (Tiles) */
-        .result-card {
-            background: #fff; border-radius: 15px; padding: 15px; cursor: pointer;
-            transition: 0.2s; border: 1px solid #f0f0f0; margin-bottom: 10px;
-            display: flex; align-items: center;
-        }
-        .result-card:hover { transform: translateY(-3px); box-shadow: 0 5px 15px rgba(0,0,0,0.05); border-color: #6c5ce7; }
-        .r-avatar {
-            width: 50px; height: 50px; background: #e0e7ff; color: #6c5ce7;
-            border-radius: 50%; display: flex; align-items: center; justify-content: center;
-            font-weight: bold; font-size: 1.2rem; margin-right: 15px;
-        }
-
-        /* Profile & Timeline */
-        .profile-view { display: none; } /* Hidden initially */
-        
-        .profile-header {
-            background: linear-gradient(135deg, #6c5ce7 0%, #a29bfe 100%);
-            color: white; border-radius: 20px; padding: 30px; text-align: center;
-            box-shadow: 0 10px 30px rgba(108, 92, 231, 0.3); margin-bottom: 25px;
-            position: relative;
-        }
-        .btn-back {
-            position: absolute; top: 15px; left: 15px; background: rgba(255,255,255,0.2);
-            color: #fff; border: none; border-radius: 50%; width: 40px; height: 40px;
-        }
-        
+        .search-wrapper { background: #fff; border-radius: 25px; padding: 40px 30px; box-shadow: 0 15px 40px rgba(108, 92, 231, 0.1); text-align: center; }
+        .search-input { background: #f8f9fa; border: 2px solid #e9ecef; border-radius: 50px; padding: 15px 25px; font-size: 1.1rem; text-align: center; font-weight: 500; }
+        .btn-search { background: linear-gradient(135deg, #6c5ce7 0%, #a29bfe 100%); color: white; border-radius: 50px; padding: 12px 30px; border: none; font-weight: 600; margin-top: 15px; width: 100%; }
+        .profile-view { display: none; }
+        .profile-header { background: linear-gradient(135deg, #6c5ce7 0%, #a29bfe 100%); color: white; border-radius: 20px; padding: 30px; text-align: center; box-shadow: 0 10px 30px rgba(108, 92, 231, 0.3); margin-bottom: 25px; position: relative; }
         .timeline-box { background: #fff; border-radius: 20px; padding: 25px; box-shadow: 0 5px 20px rgba(0,0,0,0.03); }
         .timeline-item { border-left: 2px solid #e9ecef; padding-left: 20px; padding-bottom: 25px; position: relative; }
-        .timeline-item:last-child { border: none; padding-bottom: 0; }
-        .timeline-dot {
-            width: 12px; height: 12px; background: #6c5ce7; border-radius: 50%;
-            position: absolute; left: -7px; top: 5px; box-shadow: 0 0 0 4px #fff;
-        }
-        .t-time { font-size: 0.85rem; color: #94a3b8; font-weight: 500; }
-        .t-event { font-size: 1rem; font-weight: 600; color: #2d3436; margin: 3px 0; }
-        
+        .timeline-dot { width: 12px; height: 12px; background: #6c5ce7; border-radius: 50%; position: absolute; left: -7px; top: 5px; box-shadow: 0 0 0 4px #fff; }
         .missing-banner { background: #ff7675; color: white; padding: 15px; border-radius: 15px; text-align: center; font-weight: bold; margin-bottom: 20px; display: none; }
     </style>
 </head>
 <body>
 
 <div class="container">
-
     <div id="searchView">
         <div class="search-wrapper animate__animated animate__fadeInDown">
-            <div class="logo-icon">⚜️</div>
             <h3 class="fw-bold">Find Scout</h3>
-            <p class="text-muted small mb-4">Enter Name or ID to track progress</p>
-            
-            <input type="text" id="searchInput" class="form-control search-input" placeholder="Type Name... (e.g. Amal)" onkeyup="filterScouts()">
-        </div>
-
-        <div id="resultsArea" class="animate__animated animate__fadeInUp">
-            <div class="text-center text-muted small mt-5">Results will appear here...</div>
+            <p class="text-muted small mb-4">Enter exact ID</p>
+            <input type="text" id="searchInput" class="form-control search-input" placeholder="e.g. KG25/001">
+            <button onclick="performSearch()" class="btn-search">SEARCH</button>
         </div>
     </div>
 
     <div id="profileView" class="profile-view animate__animated animate__fadeInRight">
-        
-        <div id="missingAlert" class="missing-banner animate__animated animate__pulse animate__infinite">
-            ⚠️ ALERT: Scout marked as MISSING!
-        </div>
-
+        <div id="missingAlert" class="missing-banner animate__animated animate__pulse animate__infinite">⚠️ MARKED MISSING!</div>
         <div class="profile-header">
-            <button onclick="goBack()" class="btn-back"><i class="bi bi-arrow-left"></i></button>
+            <button onclick="location.reload()" class="btn btn-sm btn-light rounded-circle position-absolute top-0 start-0 m-3"><i class="bi bi-arrow-left"></i></button>
             <div class="bg-white text-primary d-flex align-items-center justify-content-center mx-auto mb-3" style="width:70px; height:70px; border-radius:50%; font-weight:bold; font-size:1.8rem;" id="pAvatar">A</div>
-            <h3 class="fw-bold mb-1" id="pName">Loading...</h3>
-            <span class="badge bg-white text-primary bg-opacity-25" id="pID">ID: --</span>
-            
-            <div class="d-flex justify-content-center gap-4 mt-4">
-                <div class="text-center">
-                    <h5 class="fw-bold mb-0" id="pTroop">-</h5>
-                    <small class="text-white-50">Troop</small>
-                </div>
-                <div class="text-center">
-                    <h5 class="fw-bold mb-0" id="pPoints">0</h5>
-                    <small class="text-white-50">Activities</small>
-                </div>
-            </div>
+            <h3 class="fw-bold mb-1" id="pName">...</h3>
+            <span class="badge bg-white text-primary bg-opacity-25" id="pID">...</span>
+            <div class="mt-3"><h5 class="fw-bold mb-0" id="pTroop">-</h5><small class="text-white-50">Troop</small></div>
         </div>
-
         <div class="timeline-box">
-            <h6 class="fw-bold text-muted mb-4 text-uppercase">Recent Activity</h6>
-            <div id="timelineContainer">
-                <p class="text-center text-muted">No activities found.</p>
-            </div>
+            <h6 class="fw-bold text-muted mb-4 text-uppercase">Activity Log</h6>
+            <div id="timelineContainer"><p class="text-center text-muted">Loading...</p></div>
         </div>
     </div>
-
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-    import { getFirestore, collection, query, where, orderBy, limit, getDocs, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+    import { getFirestore, doc, getDoc, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+    import { getDatabase, ref, query as rtdbQuery, orderByChild, equalTo, get, limitToLast } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
-    // 🔴 YOUR CONFIG
+    // 🔴 CONFIG
     const firebaseConfig = {
         apiKey: "AIzaSyBsBsKnXv6FgYVk7OLo0XagFSBZgYajuNA",
         authDomain: "qr-system-02---web-based.firebaseapp.com",
         projectId: "qr-system-02---web-based",
         storageBucket: "qr-system-02---web-based.firebasestorage.app",
         messagingSenderId: "742559334366",
-        appId: "1:742559334366:web:0c104f39997de0572fe74f"
+        appId: "1:742559334366:web:0c104f39997de0572fe74f",
+        databaseURL: "https://qr-system-02---web-based-default-rtdb.asia-southeast1.firebasedatabase.app/"
     };
 
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
+    const rtdb = getDatabase(app);
 
-    let allScouts = [];
+    window.performSearch = async function() {
+        let val = document.getElementById('searchInput').value.trim();
+        if(!val) return;
+        Swal.showLoading();
 
-    // 1. Load All Scouts (For Fast Search)
-    onSnapshot(collection(db, "scouts"), (snap) => {
-        allScouts = [];
-        snap.forEach(doc => allScouts.push(doc.data()));
-        console.log("Scouts Loaded:", allScouts.length);
-    });
+        try {
+            // Firestore Profile
+            let docID = val.replace('/', '_'); 
+            let snap = await getDoc(doc(db, "scouts", docID));
+            if(!snap.exists()) {
+                let q = await getDocs(query(collection(db, "scouts"), where("id", "==", val)));
+                if(q.empty) { Swal.fire('Not Found'); return; }
+                snap = q.docs[0];
+            }
+            
+            let s = snap.data();
+            document.getElementById('searchView').style.display='none';
+            document.getElementById('profileView').style.display='block';
+            document.getElementById('pName').innerText = s.name;
+            document.getElementById('pID').innerText = s.id;
+            document.getElementById('pTroop').innerText = s.troop;
+            document.getElementById('pAvatar').innerText = s.name.charAt(0);
+            document.getElementById('missingAlert').style.display = s.isMissing ? 'block' : 'none';
+            if(s.isMissing) document.querySelector('.profile-header').style.background = '#ff7675';
 
-    // 2. Filter Logic (Like Admin)
-    window.filterScouts = function() {
-        let val = document.getElementById('searchInput').value.toLowerCase();
-        let container = document.getElementById('resultsArea');
-        container.innerHTML = "";
+            // RTDB Logs
+            const logsRef = rtdbQuery(ref(rtdb, 'logs'), orderByChild('scoutID'), equalTo(s.id));
+            const lSnap = await get(logsRef);
+            let h = "";
+            if(lSnap.exists()) {
+                let logs = Object.values(lSnap.val()).sort((a,b)=>b.timestamp-a.timestamp);
+                logs.forEach(l => {
+                    let c = l.action.includes('IN')?'#00b894':(l.action.includes('OUT')?'#d63031':'#6c5ce7');
+                    h += `<div class="timeline-item"><div class="timeline-dot" style="background:${c}"></div><div class="t-time">${new Date(l.timestamp).toLocaleString()}</div><div class="t-event">${l.eventName}</div><span class="badge bg-light text-dark border">${l.action}</span></div>`;
+                });
+            } else h = "<p class='text-center text-muted'>No activity</p>";
+            document.getElementById('timelineContainer').innerHTML = h;
+            Swal.close();
 
-        if(val.length < 1) {
-            container.innerHTML = `<div class="text-center text-muted small mt-5">Start typing to search...</div>`;
-            return;
-        }
-
-        let filtered = allScouts.filter(s => 
-            s.name.toLowerCase().includes(val) || 
-            s.id.toLowerCase().includes(val)
-        );
-
-        if(filtered.length === 0) {
-            container.innerHTML = `<div class="text-center text-muted mt-4">No scouts found.</div>`;
-            return;
-        }
-
-        filtered.slice(0, 10).forEach(s => {
-            container.innerHTML += `
-            <div class="result-card animate__animated animate__fadeInUp" onclick="loadProfile('${s.id}')">
-                <div class="r-avatar">${s.name.charAt(0)}</div>
-                <div>
-                    <h6 class="fw-bold mb-0 text-dark">${s.name}</h6>
-                    <small class="text-muted">${s.id} • ${s.troop}</small>
-                </div>
-                <div class="ms-auto"><i class="bi bi-chevron-right text-muted"></i></div>
-            </div>`;
-        });
+        } catch(e) { console.error(e); }
     }
-
-    // 3. Load Profile & Logs
-    window.loadProfile = async function(scoutID) {
-        let scout = allScouts.find(s => s.id === scoutID);
-        if(!scout) return;
-
-        // Hide Search, Show Profile
-        document.getElementById('searchView').style.display = 'none';
-        document.getElementById('profileView').style.display = 'block';
-
-        // Set Details
-        document.getElementById('pName').innerText = scout.name;
-        document.getElementById('pID').innerText = scout.id;
-        document.getElementById('pAvatar').innerText = scout.name.charAt(0);
-        document.getElementById('pTroop').innerText = scout.troopNum || '-';
-        
-        // Check Missing
-        if(scout.isMissing) {
-            document.getElementById('missingAlert').style.display = 'block';
-            document.querySelector('.profile-header').style.background = '#ff7675';
-        } else {
-            document.getElementById('missingAlert').style.display = 'none';
-            document.querySelector('.profile-header').style.background = 'linear-gradient(135deg, #6c5ce7 0%, #a29bfe 100%)';
-        }
-
-        // Fetch Logs
-        const q = query(collection(db, "logs"), where("scoutID", "==", scoutID), orderBy("timestamp", "desc"), limit(15));
-        const snap = await getDocs(q);
-        
-        let tContainer = document.getElementById('timelineContainer');
-        tContainer.innerHTML = "";
-        
-        document.getElementById('pPoints').innerText = snap.size; // Activity count
-
-        if(snap.empty) {
-            tContainer.innerHTML = `<div class="text-center text-muted py-4">No activities yet.</div>`;
-        } else {
-            snap.forEach(d => {
-                let l = d.data();
-                let time = l.timestamp ? new Date(l.timestamp.seconds*1000).toLocaleString([], {month:'short', day:'numeric', hour:'2-digit', minute:'2-digit'}) : '';
-                
-                // Color code action
-                let dotColor = '#6c5ce7';
-                if(l.action === 'IN') dotColor = '#00b894';
-                if(l.action === 'OUT') dotColor = '#d63031';
-
-                tContainer.innerHTML += `
-                <div class="timeline-item">
-                    <div class="timeline-dot" style="background:${dotColor}"></div>
-                    <div class="t-time">${time}</div>
-                    <div class="t-event">${l.eventName}</div>
-                    <span class="badge bg-light text-dark border">${l.action}</span>
-                </div>`;
-            });
-        }
-    }
-
-    // 4. Back Button
-    window.goBack = function() {
-        document.getElementById('profileView').style.display = 'none';
-        document.getElementById('searchView').style.display = 'block';
-        document.getElementById('searchInput').value = '';
-        document.getElementById('resultsArea').innerHTML = '<div class="text-center text-muted small mt-5">Results will appear here...</div>';
-    }
-
 </script>
 </body>
 </html>
