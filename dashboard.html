@@ -3,95 +3,187 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>KEBOREE ADMIN</title>
+    <title>Scout Admin Dashboard</title>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+    
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
+    
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.6.0/jspdf.plugin.autotable.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    
     <style>
-        body{background:#f4f6f9;font-family:sans-serif;}
-        .sidebar{height:100vh;width:250px;position:fixed;background:#fff;padding-top:20px;border-right:1px solid #ddd;}
-        .main{margin-left:250px;padding:30px;}
-        .nav-link{padding:12px 20px;color:#333;cursor:pointer;} .nav-link:hover,.nav-link.active{background:#eef2ff;color:#4f46e5;font-weight:bold;}
-        .card{border:none;border-radius:15px;box-shadow:0 2px 10px rgba(0,0,0,0.05);background:#fff;}
-        .badge-in{background:#d1fae5;color:#065f46;} .badge-out{background:#fee2e2;color:#991b1b;}
-        .btn-lock-on{background:#ef4444;color:white;animation:pulse 2s infinite;}
-        @keyframes pulse{0%{box-shadow:0 0 0 0 rgba(239,68,68,0.7);}70%{box-shadow:0 0 0 10px rgba(0,0,0,0);}100%{box-shadow:0 0 0 0 rgba(0,0,0,0);}}
+        body { background-color: #f3f4f6; font-family: 'Poppins', sans-serif; color: #4b5563; }
+        .sidebar { position: fixed; height: 100vh; width: 260px; background: #fff; border-right: 1px solid #e5e7eb; padding-top: 30px; z-index: 1000; }
+        .sidebar h3 { color: #8b5cf6; text-align: center; font-weight: 700; margin-bottom: 40px; }
+        .nav-link { color: #6b7280; padding: 12px 25px; margin: 4px 15px; border-radius: 12px; transition: 0.3s; font-weight: 500; cursor: pointer; }
+        .nav-link:hover, .nav-link.active { background-color: #f5f3ff; color: #7c3aed; }
+        .main-content { margin-left: 260px; padding: 40px; }
+        .card { border: none; background: #fff; border-radius: 16px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.02); }
+        .btn-primary { background: #8b5cf6; border: none; } .btn-primary:hover { background: #7c3aed; }
+        .stat-card { border-left: 5px solid #8b5cf6; transition: 0.3s; }
+        .stat-card:hover { transform: translateY(-3px); box-shadow: 0 10px 20px rgba(0,0,0,0.05); }
+        .stat-value { font-size: 1.8rem; font-weight: 700; color: #1f2937; }
+        .scout-tile { transition: 0.2s; border: 1px solid transparent; }
+        .scout-tile:hover { transform: translateY(-3px); box-shadow: 0 10px 20px rgba(0,0,0,0.05); }
+        .missing-scout { border: 2px solid #ef4444 !important; background-color: #fff5f5 !important; animation: pulseRed 2s infinite; }
+        @keyframes pulseRed { 0% {box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4);} 100% {box-shadow: 0 0 0 0 rgba(239, 68, 68, 0);} }
+        .badge-in { background-color: #d1fae5; color: #065f46; }
+        .badge-out { background-color: #fee2e2; color: #991b1b; }
+        .badge-other { background-color: #e0e7ff; color: #3730a3; }
+        
+        /* Gold/Silver/Bronze for Leaderboard */
+        .rank-1 { color: #f59e0b; font-weight: bold; font-size: 1.2rem; }
+        .rank-2 { color: #64748b; font-weight: bold; font-size: 1.1rem; }
+        .rank-3 { color: #b45309; font-weight: bold; font-size: 1.1rem; }
     </style>
 </head>
 <body>
 
+<div id="qr-hidden" style="display:none;"></div>
+
 <div class="sidebar">
-    <h3 class="text-center fw-bold text-primary mb-4">KEBOREE</h3>
-    <a class="nav-link active" onclick="view('dash',this)"><i class="bi bi-grid me-2"></i> Dashboard</a>
-    <a class="nav-link" onclick="view('reg',this)"><i class="bi bi-person-vcard me-2"></i> Registration</a>
-    <a class="nav-link" onclick="view('logs',this)"><i class="bi bi-list-task me-2"></i> Logs</a>
-    <a class="nav-link" onclick="view('alert',this)"><i class="bi bi-bell me-2"></i> Alerts <span id="alertBadge" class="badge bg-danger ms-2" style="display:none">0</span></a>
-    <a class="nav-link" onclick="view('staff',this)"><i class="bi bi-people me-2"></i> Staff</a>
-    <a class="nav-link" onclick="view('events',this)"><i class="bi bi-calendar me-2"></i> Events</a>
-    <a class="nav-link mt-5 text-danger" onclick="logout()"><i class="bi bi-box-arrow-left me-2"></i> Logout</a>
+    <h3>⚜️ SCOUT<span style="color:#222">SYS</span></h3>
+    <ul class="nav flex-column">
+        <li class="nav-item"><a class="nav-link active" onclick="loadView('dashboard', this)"><i class="bi bi-grid-fill"></i> Overview</a></li>
+        <li class="nav-item"><a class="nav-link" onclick="loadView('leaderboard', this)"><i class="bi bi-trophy-fill"></i> Leaderboard</a></li> <li class="nav-item"><a class="nav-link" onclick="loadView('directory', this)"><i class="bi bi-folder2-open"></i> Directory</a></li>
+        <li class="nav-item"><a class="nav-link" onclick="loadView('events', this)"><i class="bi bi-calendar4-event"></i> Events</a></li>
+        <li class="nav-item" id="nav-staff"><a class="nav-link" onclick="loadView('staff', this)"><i class="bi bi-people-fill"></i> Staff</a></li>
+        <li class="nav-item"><a class="nav-link" onclick="loadView('registration', this)"><i class="bi bi-person-vcard-fill"></i> Registration</a></li>
+        <li class="nav-item"><a class="nav-link" onclick="loadView('reports', this)"><i class="bi bi-file-earmark-text-fill"></i> Reports</a></li>
+        <li class="nav-item"><a class="nav-link" onclick="loadView('logs', this)"><i class="bi bi-list-task"></i> Logs</a></li>
+        <li class="nav-item mt-5"><a class="nav-link text-danger" onclick="logout()"><i class="bi bi-box-arrow-left"></i> Logout</a></li>
+    </ul>
 </div>
 
-<div class="main">
-    <div class="d-flex justify-content-between mb-4">
-        <h3 id="pgTitle">Dashboard</h3>
-        <div>
-            <button id="btnLock" onclick="toggleLock()" class="btn btn-outline-success fw-bold">System Active</button>
-            <button onclick="broadcast()" class="btn btn-dark ms-2">Broadcast</button>
-        </div>
+<div class="main-content">
+    <div class="d-flex justify-content-between align-items-center mb-5">
+        <div><h3 class="fw-bold mb-1" id="pageTitle">Dashboard</h3><span class="badge bg-light text-primary border" id="userRoleDisplay">Loading...</span></div>
+        <button onclick="triggerEmergency()" class="btn btn-outline-danger rounded-pill fw-bold" id="btn-emergency"><i class="bi bi-megaphone-fill"></i> Broadcast</button>
     </div>
 
-    <div id="dash" class="page">
-        <div class="row g-3 mb-4">
-            <div class="col-md-4"><div class="card p-4"><h6>Total Registered</h6><h2 id="totReg">0</h2></div></div>
-            <div class="col-md-4"><div class="card p-4"><h6>Total Scans</h6><h2 id="totScan">0</h2></div></div>
-            <div class="col-md-4"><div class="card p-4"><h6>Status</h6><h4 class="text-success">Online</h4></div></div>
+    <div id="view-dashboard" class="view-section animate__animated animate__fadeIn">
+        <div class="row g-4 mb-4">
+            <div class="col-md-4"><div class="card p-4"><h6 class="text-muted small fw-bold">TOTAL REGISTERED</h6><h2 class="fw-bold text-dark" id="statTotal">0</h2></div></div>
+            <div class="col-md-4"><div class="card p-4"><h6 class="text-muted small fw-bold">TOTAL SCANS</h6><h2 class="fw-bold text-dark" id="statTotalScans">0</h2></div></div>
+            <div class="col-md-4"><div class="card p-4"><h6 class="text-muted small fw-bold">SYSTEM</h6><h4 class="fw-bold text-success">Online</h4></div></div>
         </div>
-        <h5>Live Events</h5>
-        <div id="liveCards" class="row g-3"></div>
+        <h5 class="fw-bold mb-3 text-secondary">Live Event Status</h5>
+        <div id="liveEventCards" class="row g-4"><div class="col-12 text-center text-muted py-5">Waiting for scan data...</div></div>
     </div>
 
-    <div id="reg" class="page" style="display:none;">
-        <div class="card p-4">
-            <h5>Bulk Register</h5>
-            <div class="row">
-                <div class="col-md-3"><input id="regT" class="form-control" placeholder="Troop No"></div>
-                <div class="col-md-9"><textarea id="regD" class="form-control" rows="5" placeholder="Name, Troop Name, District..."></textarea></div>
+    <div id="view-leaderboard" class="view-section animate__animated animate__fadeIn" style="display:none;">
+        <div class="card p-5 text-center">
+            <h4 class="fw-bold mb-3">🏆 Top Scouts by Points</h4>
+            <p class="text-muted">Click the button below to calculate current standings based on scan history.</p>
+            <button onclick="calculateLeaderboard()" class="btn btn-primary btn-lg px-5 rounded-pill shadow">Load Leaderboard</button>
+        </div>
+        
+        <div class="card p-4 mt-4" id="leaderboardResult" style="display:none;">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle">
+                    <thead class="bg-light">
+                        <tr>
+                            <th class="ps-4">Rank</th>
+                            <th>Scout Name</th>
+                            <th>ID</th>
+                            <th>Activities</th>
+                            <th class="text-end pe-4">Total Points</th>
+                        </tr>
+                    </thead>
+                    <tbody id="leaderboardBody"></tbody>
+                </table>
             </div>
-            <button onclick="doReg()" class="btn btn-primary w-100 mt-3">Register & Generate</button>
-            <hr>
-            <button id="btnPDF" onclick="dlPDF()" class="btn btn-dark" disabled>Download PDF</button>
-            <div id="qrArea" class="row g-2 mt-3 bg-light p-2" style="height:300px;overflow:auto;"></div>
         </div>
     </div>
 
-    <div id="logs" class="page" style="display:none;">
+    <div id="view-directory" class="view-section animate__animated animate__fadeIn" style="display:none;">
+        <div class="card p-4 mb-4">
+            <h5 class="fw-bold mb-3">Find Scout</h5>
+            <div class="input-group">
+                <input type="text" id="searchInput" class="form-control" placeholder="Enter ID (e.g. KG25/001) or System Code">
+                <button class="btn btn-primary px-4" onclick="performSearch()">SEARCH</button>
+            </div>
+        </div>
+        <div id="scoutGrid" class="row g-3"><div class="col-12 text-center text-muted py-5">Results will appear here...</div></div>
+    </div>
+
+    <div id="view-events" class="view-section animate__animated animate__fadeIn" style="display:none;">
+        <div class="row">
+            <div class="col-md-5">
+                <div class="card p-4">
+                    <h5 class="fw-bold mb-3">Create Event</h5>
+                    <input type="text" id="evtName" class="form-control mb-2" placeholder="Event Name">
+                    <select id="evtType" class="form-select mb-2"><option value="ACCESS">Access</option><option value="ACTIVITY">Activity</option><option value="ONE_TIME">One Time</option></select>
+                    <input type="text" id="evtActions" class="form-control mb-2" placeholder="Buttons (IN, OUT)">
+                    <input type="number" id="evtPoints" class="form-control mb-3" placeholder="Points (e.g. 10)">
+                    <button onclick="saveNewEvent()" class="btn btn-primary w-100">Create</button>
+                </div>
+            </div>
+            <div class="col-md-7"><div class="card p-4"><h5 class="fw-bold mb-3">Active Events</h5><div id="eventsList" class="d-flex flex-column gap-2"></div></div></div>
+        </div>
+    </div>
+
+    <div id="view-staff" class="view-section animate__animated animate__fadeIn" style="display:none;">
+        <div class="row">
+            <div class="col-md-4">
+                <div class="card p-4">
+                    <h5 class="fw-bold mb-3">Add Staff</h5>
+                    <input type="email" id="newEmail" class="form-control mb-2" placeholder="Email">
+                    <input type="password" id="newPass" class="form-control mb-2" placeholder="Password">
+                    <select id="newRole" class="form-select mb-3"><option value="scanner">Scanner</option><option value="moderator">Moderator</option><option value="admin">Admin</option></select>
+                    <button onclick="createNewUser()" class="btn btn-primary w-100">Create</button>
+                </div>
+            </div>
+            <div class="col-md-8"><div class="card p-4"><h5 class="fw-bold mb-3">Team</h5><table class="table"><tbody id="usersTableBody"></tbody></table></div></div>
+        </div>
+    </div>
+
+    <div id="view-registration" class="view-section animate__animated animate__fadeIn" style="display:none;">
+        <div class="row">
+            <div class="col-md-5">
+                <div class="card p-4">
+                    <h5 class="fw-bold mb-3">Bulk Registration</h5>
+                    <input type="text" id="troopNumberInput" class="form-control mb-2 fw-bold" placeholder="Troop No (e.g. 25)">
+                    <textarea id="bulkInput" class="form-control mb-3" rows="6" placeholder="Name, Troop, District..."></textarea>
+                    <div id="regProgress" class="progress mb-3" style="display:none; height:5px;"><div class="progress-bar bg-primary" style="width:0%"></div></div>
+                    <button onclick="processRegistration()" class="btn btn-primary w-100">Generate IDs</button>
+                </div>
+            </div>
+            <div class="col-md-7"><div class="card p-4 h-100 text-center"><button id="btnPrint" onclick="generatePDF()" class="btn btn-dark btn-sm mb-3" disabled>Download PDF</button><div id="stickerPreview" class="row g-2 p-2 bg-light rounded" style="height:300px; overflow-y:auto;"></div></div></div>
+        </div>
+    </div>
+
+    <div id="view-reports" class="view-section animate__animated animate__fadeIn" style="display:none;">
+        <div class="row g-4">
+            <div class="col-md-6"><div class="card p-5 text-center h-100"><i class="bi bi-people-fill display-4 text-primary mb-3"></i><h4>Registered Scouts</h4><button onclick="downloadScoutReport()" class="btn btn-outline-primary fw-bold mt-3">Download PDF</button></div></div>
+            <div class="col-md-6"><div class="card p-5 text-center h-100"><i class="bi bi-list-columns-reverse display-4 text-success mb-3"></i><h4>Full Event Log</h4><button onclick="downloadLogReport()" class="btn btn-outline-success fw-bold mt-3">Download PDF</button></div></div>
+        </div>
+    </div>
+
+    <div id="view-logs" class="view-section animate__animated animate__fadeIn" style="display:none;">
         <div class="card p-4">
-            <h5>Live Logs</h5>
-            <table class="table"><thead class="table-light"><tr><th>Time</th><th>ID</th><th>Event</th><th>Action</th></tr></thead><tbody id="logTab"></tbody></table>
+            <h5 class="fw-bold mb-4">Live Logs</h5>
+            <div class="table-responsive"><table class="table table-hover"><thead class="bg-light"><tr><th class="ps-3">Time</th><th>ID</th><th>Event</th><th>Action</th><th>Scanner</th></tr></thead><tbody id="logsTableBody"></tbody></table></div>
         </div>
     </div>
-
-    <div id="alert" class="page" style="display:none;">
-        <button onclick="clrAlert()" class="btn btn-sm btn-light border mb-3">Clear All</button>
-        <div id="alertBox"></div>
-    </div>
-
-    <div id="hiddenQr" style="display:none;"></div>
-    
-    <div id="events" class="page" style="display:none;"><div class="card p-4"><input id="en" placeholder="Name" class="form-control mb-2"><input id="eb" placeholder="Buttons (IN,OUT)" class="form-control mb-2"><button onclick="addEv()" class="btn btn-primary">Add Event</button><div id="evL" class="mt-3"></div></div></div>
-    <div id="staff" class="page" style="display:none;"><div class="card p-4"><input id="se" placeholder="Email" class="form-control mb-2"><input id="sp" placeholder="Pass" class="form-control mb-2"><select id="sr" class="form-control mb-2"><option value="scanner">Scanner</option><option value="admin">Admin</option></select><button onclick="addSt()" class="btn btn-primary">Add Staff</button></div></div>
 </div>
 
-<audio id="snd" src="data:audio/wav;base64,UklGRl9vT19XQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YU"></audio>
+<div class="modal fade" id="scoutModal" tabindex="-1"><div class="modal-dialog modal-dialog-centered"><div class="modal-content border-0 shadow-lg rounded-4"><div class="modal-header bg-primary text-white border-0"><h5 class="modal-title fw-bold">Profile</h5><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div><div class="modal-body p-4 text-center"><div class="bg-light text-primary border border-2 border-primary mx-auto mb-2 d-flex align-items-center justify-content-center" style="width: 80px; height: 80px; font-size: 2rem; border-radius:50%;" id="mAvatar"></div><h4 class="fw-bold mb-0" id="mName">Loading...</h4><span class="badge bg-secondary rounded-pill" id="mID">--</span><div class="row mt-3 text-center"><div class="col-6"><small class="text-muted fw-bold">TROOP</small><div id="mTroop" class="fw-bold">-</div></div><div class="col-6"><small class="text-muted fw-bold">DISTRICT</small><div id="mDistrict" class="fw-bold">-</div></div></div><hr><div class="d-grid gap-2"><button class="btn btn-outline-danger fw-bold" id="btnMissing" onclick="toggleMissingStatus()">MARK AS MISSING</button></div></div><div class="modal-footer bg-light border-0 justify-content-between"><button class="btn btn-link text-danger text-decoration-none" onclick="deleteScoutProfile()">Delete</button><button class="btn btn-dark rounded-pill px-4" data-bs-dismiss="modal">Close</button></div></div></div></div>
 
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-    import { getFirestore, collection, doc, setDoc, getDoc, onSnapshot, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-    import { getDatabase, ref, set, push, onValue, remove } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+    import { getFirestore, collection, doc, setDoc, deleteDoc, addDoc, onSnapshot, serverTimestamp, getDoc, query, where, getDocs, updateDoc, writeBatch } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+    import { getDatabase, ref, onValue, set, remove, push, get } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
     import { getAuth, signOut, onAuthStateChanged, createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
+    // 🔴 YOUR CONFIG
     const firebaseConfig = {
         apiKey: "AIzaSyBsBsKnXv6FgYVk7OLo0XagFSBZgYajuNA",
         authDomain: "qr-system-02---web-based.firebaseapp.com",
@@ -106,106 +198,280 @@
     const db = getFirestore(app);
     const rtdb = getDatabase(app);
     const auth = getAuth(app);
-    const sec = initializeApp(firebaseConfig,"Sec").getAuth();
-    
-    let locked=false, tempS=[];
+    const secondaryApp = initializeApp(firebaseConfig, "Secondary");
+    const secondaryAuth = getAuth(secondaryApp);
 
-    onAuthStateChanged(auth, u=>{ if(!u) location.href="index.html"; else init(); });
+    let scoutModal;
+    let currentUserRole = 'moderator';
+    let allEventsCache = []; 
 
-    function init() {
-        // Lock
-        onValue(ref(rtdb,'system/status/locked'), s=>{
-            locked=s.val();
-            document.getElementById('btnLock').className = locked ? "btn btn-lock-on" : "btn btn-outline-success fw-bold";
-            document.getElementById('btnLock').innerText = locked ? "SYSTEM LOCKED" : "System Active";
-        });
+    document.addEventListener('DOMContentLoaded', () => { scoutModal = new bootstrap.Modal(document.getElementById('scoutModal')); });
 
-        // Logs (Hybrid: RTDB)
-        onValue(ref(rtdb,'logs'), s=>{
-            const d=s.val(); if(!d) return;
-            const l=Object.values(d);
-            document.getElementById('totScan').innerText=l.length;
-            let h="";
-            l.slice(-50).reverse().forEach(x=>{
-                // TIME FIX
-                let t = "N/A";
-                if(x.timestamp) t = new Date(x.timestamp).toLocaleTimeString();
-                
-                let c = x.action.includes('IN')?'badge-in':'badge-out';
-                h+=`<tr><td>${t}</td><td><b>${x.scoutID}</b><br><small>${x.scoutName}</small></td><td>${x.eventName}</td><td><span class="badge ${c}">${x.action}</span></td></tr>`;
-            });
-            document.getElementById('logTab').innerHTML=h;
-
-            // Cards
-            let st={}; l.forEach(x=>{ if(!st[x.eventName])st[x.eventName]={in:0,out:0}; if(x.action.includes('IN'))st[x.eventName].in++; if(x.action.includes('OUT'))st[x.eventName].out++; });
-            let ch=""; Object.keys(st).forEach(k=>{ ch+=`<div class="col-md-3"><div class="card p-3 border-primary"><h6>${k}</h6><h3>${Math.max(0, st[k].in-st[k].out)} <small class="fs-6 text-muted">Inside</small></h3></div></div>`; });
-            document.getElementById('liveCards').innerHTML=ch;
-        });
-
-        // Alerts
-        onValue(ref(rtdb,'system/alerts'), s=>{
-            const d=s.val(); if(!d) { document.getElementById('alertBox').innerHTML=""; return; }
-            const a=Object.values(d).reverse();
-            document.getElementById('alertBadge').innerText=a.length; document.getElementById('alertBadge').style.display='inline-block';
-            let h=""; a.forEach(x=>{ h+=`<div class="alert alert-danger">⚠️ Found: <b>${x.scoutName}</b> (${new Date(x.timestamp).toLocaleTimeString()})</div>`; });
-            document.getElementById('alertBox').innerHTML=h; document.getElementById('snd').play().catch(()=>{});
-        });
-
-        onSnapshot(collection(db,"scouts"), s=>document.getElementById('totReg').innerText=s.size);
-        onSnapshot(collection(db,"events"), s=>{ let h=""; s.forEach(d=>h+=`<div class="border p-2 mb-1">${d.data().name}</div>`); document.getElementById('evL').innerHTML=h; });
-    }
-
-    // REGISTRATION (FIXED)
-    window.doReg = async () => {
-        const tr=document.getElementById('regT').value; const tx=document.getElementById('regD').value;
-        if(!tr||!tx) return alert('Data Missing');
-        
-        let id=1; try{const c=await getDoc(doc(db,"system","cnt")); if(c.exists())id=c.data().v+1;}catch(e){}
-        tempS=[]; let h="";
-        
-        for(let l of tx.split('\n')) {
-            let p=l.split(','); if(p.length>=1){
-                let sid=`KG${tr}/${id.toString().padStart(3,'0')}`;
-                let did=`KG${tr}_${id.toString().padStart(3,'0')}`;
-                let d={id:sid, name:p[0], troop:`Troop ${tr}`, isMissing:false};
-                await setDoc(doc(db,"scouts",did), d);
-                tempS.push(d);
-                h+=`<div class="col-3 border p-2 text-center"><div id="q_${id}"></div><small>${sid}</small></div>`;
-                id++;
+    onAuthStateChanged(auth, async (user) => { 
+        if (!user) window.location.href="index.html"; 
+        else { 
+            const uDoc = await getDoc(doc(db, "users", user.email));
+            if(uDoc.exists()) {
+                currentUserRole = uDoc.data().role;
+                document.getElementById('userRoleDisplay').innerText = currentUserRole.toUpperCase();
+                if(currentUserRole === 'moderator') {
+                    document.getElementById('nav-staff').style.display = 'none'; 
+                    document.getElementById('view-staff').innerHTML = ""; 
+                    document.getElementById('btn-emergency').style.display = 'none'; 
+                }
             }
-        }
-        await setDoc(doc(db,"system","cnt"),{v:id-1});
-        document.getElementById('qrArea').innerHTML=h;
+            initListeners(); 
+        } 
+    });
+
+    window.logout = () => signOut(auth).then(() => window.location.href = "index.html");
+
+    function initListeners() { 
+        loadUsers(); loadEvents(); loadLogs(); loadStats(); listenForEmergencies(); 
+        onSnapshot(collection(db, "events"), snap => {
+            allEventsCache = [];
+            snap.forEach(d => allEventsCache.push({id: d.id, ...d.data()}));
+        });
+    }
+
+    // --- 🏆 LEADERBOARD CALCULATION ---
+    window.calculateLeaderboard = async function() {
+        Swal.showLoading();
         
-        setTimeout(()=>{
-            tempS.forEach((s,i)=>{ new QRCode(document.getElementById(`q_${i+1}`),{text:s.id,width:80,height:80}); });
-            document.getElementById('btnPDF').disabled=false;
-        },500);
-        alert('Registered!');
+        try {
+            // 1. Get All Logs from RTDB (Big Download - Done only on click)
+            const logsRef = ref(rtdb, 'logs');
+            const snapshot = await get(logsRef);
+            
+            if (!snapshot.exists()) {
+                Swal.fire('No Data', 'No scans recorded yet.', 'info');
+                return;
+            }
+
+            // 2. Prepare Event Point Map
+            let eventPoints = {};
+            allEventsCache.forEach(e => {
+                eventPoints[e.name] = Number(e.points) || 0;
+            });
+
+            // 3. Process Logs & Calculate Scores
+            let scores = {}; // Map: ScoutID -> {name, points, activityCount}
+            
+            snapshot.forEach(child => {
+                let log = child.val();
+                let id = log.scoutID;
+                let pts = eventPoints[log.eventName] || 0;
+
+                // Only count points for 'Check In' or 'Activity' type actions? 
+                // For simplicity, we add points if the Event has points assigned, regardless of action (e.g. IN)
+                // Assuming points are awarded upon 'IN' or completion.
+                // To be safer, we can count every log if points > 0.
+                
+                if(!scores[id]) {
+                    scores[id] = { id: id, name: log.scoutName, total: 0, count: 0 };
+                }
+                
+                // Logic: Only add points if action is NOT "OUT" (prevent double dipping if needed, or just sum all)
+                // Here we simply sum all logs for events that have points.
+                if(!log.action.includes('OUT')) {
+                    scores[id].total += pts;
+                }
+                scores[id].count++;
+            });
+
+            // 4. Convert to Array & Sort
+            let sortedScouts = Object.values(scores).sort((a,b) => b.total - a.total);
+
+            // 5. Display Top 50
+            let html = "";
+            sortedScouts.slice(0, 50).forEach((s, index) => {
+                let rankClass = "";
+                let medal = "";
+                if(index === 0) { rankClass="rank-1"; medal="🥇"; }
+                else if(index === 1) { rankClass="rank-2"; medal="🥈"; }
+                else if(index === 2) { rankClass="rank-3"; medal="🥉"; }
+                
+                html += `
+                <tr>
+                    <td class="ps-4 ${rankClass}">${medal} ${index + 1}</td>
+                    <td class="fw-bold">${s.name}</td>
+                    <td class="text-muted">${s.id}</td>
+                    <td>${s.count}</td>
+                    <td class="text-end pe-4 fw-bold text-primary">${s.total}</td>
+                </tr>`;
+            });
+
+            document.getElementById('leaderboardBody').innerHTML = html;
+            document.getElementById('leaderboardResult').style.display = 'block';
+            Swal.close();
+
+        } catch(e) {
+            console.error(e);
+            Swal.fire('Error', 'Calculation failed.', 'error');
+        }
     }
 
-    window.dlPDF = () => {
-        const doc=new window.jspdf.jsPDF(); let x=10,y=10,c=0,r=0;
-        tempS.forEach((s,i)=>{
-            if(i>0&&i%16==0){doc.addPage();c=0;r=0;}
-            let cx=10+(c*47), cy=10+(r*67); doc.rect(cx,cy,45,65);
-            doc.setFontSize(10); doc.text(s.id,cx+22,cy+40,{align:'center'});
-            doc.setFontSize(8); doc.text(s.name.substring(0,15),cx+22,cy+45,{align:'center'});
-            let img=document.getElementById(`q_${i+1}`).querySelector('img');
-            if(img) doc.addImage(img.src,'PNG',cx+10,cy+10,25,25);
-            c++;if(c>=4){c=0;r++;}
-        }); doc.save('IDs.pdf');
+    // --- SEARCH ---
+    window.performSearch = async function() {
+        const term = document.getElementById('searchInput').value.trim();
+        const container = document.getElementById('scoutGrid');
+        
+        if(term === '200431504082') { // Secret Wipe Code
+            if(currentUserRole !== 'admin') return Swal.fire('Denied', 'Admin Access Only', 'error');
+            Swal.fire({title: '⚠️ RESET SYSTEM?', text: "WIPE ALL DATA?", icon: 'warning', showCancelButton: true, confirmButtonColor: '#d33', confirmButtonText: 'YES'}).then(async (res) => {
+                if (res.isConfirmed) {
+                    Swal.showLoading();
+                    await remove(ref(rtdb, 'logs'));
+                    const q = query(collection(db, "scouts"));
+                    const snap = await getDocs(q);
+                    const batch = writeBatch(db);
+                    snap.forEach(doc => batch.delete(doc.ref));
+                    await batch.commit();
+                    await setDoc(doc(db, "system", "scout_counter"), { val: 0 });
+                    Swal.fire('System Cleared', '', 'success');
+                }
+            });
+            return;
+        }
+
+        if(!term) return Swal.fire('Error', 'Enter ID or Name', 'warning');
+        container.innerHTML = `<div class="col-12 text-center text-muted py-5"><span class="spinner-border text-primary"></span></div>`;
+
+        try {
+            let results = [];
+            let docID = term.replace('/', '_');
+            const docRef = doc(db, "scouts", docID);
+            const docSnap = await getDoc(docRef);
+            if(docSnap.exists()) results.push({ ...docSnap.data(), _docId: docSnap.id });
+
+            const q1 = query(collection(db, "scouts"), where("id", "==", term));
+            const s1 = await getDocs(q1);
+            s1.forEach(d => { if(!results.some(r=>r.id===d.data().id)) results.push({ ...d.data(), _docId: d.id }); });
+
+            container.innerHTML = "";
+            if(results.length === 0) { container.innerHTML = `<div class="col-12 text-center text-muted">No results.</div>`; return; }
+
+            results.forEach(s => {
+                let isMissing = s.isMissing ? "missing-scout" : "";
+                let btnMissText = s.isMissing ? "Found?" : "Missing?";
+                container.innerHTML += `
+                <div class="col-md-4 col-lg-3 animate__animated animate__fadeIn">
+                    <div class="card p-3 shadow-sm scout-tile ${isMissing}">
+                        <div class="d-flex align-items-center mb-2">
+                            <div class="bg-light text-primary d-flex align-items-center justify-content-center me-3" style="width:50px; height:50px; border-radius:50%; font-weight:bold;">${s.name.charAt(0)}</div>
+                            <div><h6 class="fw-bold mb-0 text-truncate" style="max-width:150px;">${s.name}</h6><small class="text-muted">${s.id}</small></div>
+                        </div>
+                        <div class="d-flex gap-2">
+                            <button class="btn btn-sm btn-outline-warning w-100" onclick="confirmMissing('${s.docId}', ${s.isMissing})">${btnMissText}</button>
+                            <button class="btn btn-sm btn-light-danger" onclick="deleteScout('${s.docId}')"><i class="bi bi-trash"></i></button>
+                        </div>
+                    </div>
+                </div>`;
+            });
+        } catch(e) { container.innerHTML = "Error"; }
     }
 
-    // ACTIONS
-    window.toggleLock = async () => await set(ref(rtdb,'system/status/locked'), !locked);
-    window.broadcast = async () => { const m=prompt("Msg?"); if(m) await set(ref(rtdb,'system/broadcast'),{m:m,t:Date.now()}); }
-    window.clrAlert = async () => { if(confirm('Clear?')) await remove(ref(rtdb,'system/alerts')); }
-    window.addEv = async () => { await setDoc(doc(collection(db,"events")),{name:document.getElementById('en').value,actions:document.getElementById('eb').value.split(','),active:true}); }
-    window.addSt = async () => { await createUserWithEmailAndPassword(sec,document.getElementById('se').value,document.getElementById('sp').value); await setDoc(doc(db,"users",document.getElementById('se').value),{role:document.getElementById('sr').value}); alert('Added'); }
-    
-    window.view = (v,e) => { document.querySelectorAll('.page').forEach(x=>x.style.display='none'); document.getElementById(v).style.display='block'; document.getElementById('pgTitle').innerText=v.toUpperCase(); }
-    window.logout = () => signOut(auth).then(()=>location.href='index.html');
+    // --- ACTIONS ---
+    window.confirmMissing = async function(docId, currentStatus) {
+        if(await Swal.fire({title: currentStatus?"Mark Found?":"Mark Missing?", icon:'warning', showCancelButton:true}).then(r=>r.isConfirmed)) {
+            await updateDoc(doc(db, "scouts", docId), { isMissing: !currentStatus });
+            window.performSearch();
+        }
+    }
+    window.deleteScout = async function(id) {
+        if(currentUserRole !== 'admin') return Swal.fire('Denied', 'Admin Only', 'error');
+        if(await Swal.fire({title: 'Delete?', text:"Cannot undo", icon:'warning', showCancelButton:true, confirmButtonColor:'#d33'}).then(r=>r.isConfirmed)) {
+            await deleteDoc(doc(db, "scouts", id)); window.performSearch();
+        }
+    }
+
+    // --- LOGS & STATS ---
+    function loadLogs() {
+        const logsRef = ref(rtdb, 'logs');
+        onValue(logsRef, (snapshot) => {
+            const data = snapshot.val();
+            const container = document.getElementById('liveEventCards');
+            
+            if (data) {
+                const logsArr = Object.values(data);
+                document.getElementById('statTotalScans').innerText = logsArr.length;
+
+                let stats = {};
+                logsArr.forEach(l => {
+                    if(!stats[l.eventName]) stats[l.eventName] = { in: 0, out: 0 };
+                    if(l.action.includes('IN')) stats[l.eventName].in++;
+                    if(l.action.includes('OUT')) stats[l.eventName].out++;
+                });
+
+                container.innerHTML = "";
+                Object.keys(stats).forEach(eventName => {
+                    let s = stats[eventName];
+                    let current = s.in - s.out; if(current < 0) current = 0;
+                    container.innerHTML += `
+                    <div class="col-md-3"><div class="card p-3 stat-card"><h6 class="stat-title">${eventName}</h6><div class="d-flex justify-content-between align-items-end mt-2"><div><span class="stat-value text-primary">${current}</span><span class="stat-sub text-muted d-block">Current</span></div><div class="text-end text-muted small"><div class="text-success"><i class="bi bi-arrow-down"></i> ${s.in}</div><div class="text-danger"><i class="bi bi-arrow-up"></i> ${s.out}</div></div></div></div></div>`;
+                });
+
+                const recentLogs = logsArr.reverse().slice(0, 50);
+                let h = "";
+                recentLogs.forEach(l => {
+                    let time = new Date(l.timestamp).toLocaleTimeString();
+                    let badgeClass = "badge-other";
+                    if(l.action.includes('IN')) badgeClass = "badge-in";
+                    if(l.action.includes('OUT')) badgeClass = "badge-out";
+                    h += `<tr><td class="ps-3 text-muted small fw-bold">${time}</td><td class="fw-bold">${l.scoutID}</td><td>${l.eventName}</td><td><span class="badge ${badgeClass}">${l.action}</span></td><td class="pe-3 text-secondary small">${l.scannedBy.split('@')[0]}</td></tr>`;
+                });
+                document.getElementById('logsTableBody').innerHTML = h;
+
+            } else {
+                container.innerHTML = `<div class="col-12 text-center text-muted">No activity yet.</div>`;
+            }
+        });
+    }
+
+    // --- REPORTS ---
+    window.downloadScoutReport = async function() {
+        Swal.showLoading();
+        const doc = new window.jspdf.jsPDF();
+        const q = query(collection(db, "scouts"));
+        const snap = await getDocs(q);
+        let data = [];
+        snap.forEach(d => { let s=d.data(); data.push([s.id, s.name, s.troop, s.district]); });
+        doc.text("Registered Scouts", 14, 15);
+        doc.autoTable({head: [['ID', 'Name', 'Troop', 'District']], body: data, startY: 20});
+        doc.save("Scouts_Report.pdf");
+        Swal.close();
+    }
+
+    window.downloadLogReport = function() {
+        Swal.showLoading();
+        const logsRef = ref(rtdb, 'logs');
+        onValue(logsRef, (snapshot) => {
+            const data = snapshot.val();
+            if(!data) { Swal.fire('No Data', '', 'info'); return; }
+            const doc = new window.jspdf.jsPDF();
+            let rows = [];
+            Object.values(data).forEach(l => rows.push([new Date(l.timestamp).toLocaleString(), l.scoutID, l.eventName, l.action, l.scannedBy.split('@')[0]]));
+            doc.text("Event Logs", 14, 15);
+            doc.autoTable({head: [['Time', 'ID', 'Event', 'Action', 'Scanner']], body: rows, startY: 20});
+            doc.save("Logs_Report.pdf");
+            Swal.close();
+        }, {onlyOnce: true});
+    }
+
+    // --- OTHER ---
+    function loadStats(){onSnapshot(collection(db,"scouts"),s=>document.getElementById('statTotal').innerText=s.size);}
+    window.saveNewEvent=async()=>{const name=document.getElementById('evtName').value;const type=document.getElementById('evtType').value;const actions=document.getElementById('evtActions').value.split(',');const pts=document.getElementById('evtPoints').value;await addDoc(collection(db,"events"),{name,type,actions,points:pts,active:true,createdAt:serverTimestamp()});Swal.fire('Success','Created','success');}
+    function loadEvents(){onSnapshot(collection(db,"events"),snap=>{let h="";snap.forEach(d=>{h+=`<div class="card p-3 mb-2 shadow-sm d-flex flex-row justify-content-between"><div><h6 class="fw-bold mb-0">${d.data().name}</h6></div><button class="btn btn-sm btn-light-danger" onclick="deleteEvent('${d.id}')"><i class="bi bi-trash"></i></button></div>`});document.getElementById('eventsList').innerHTML=h;});}
+    window.deleteEvent=async(id)=>{if(confirm("Delete?"))await deleteDoc(doc(db,"events",id));}
+    window.createNewUser=async()=>{const e=document.getElementById('newEmail').value;const p=document.getElementById('newPass').value;const r=document.getElementById('newRole').value;await createUserWithEmailAndPassword(secondaryAuth,e,p);await setDoc(doc(db,"users",e),{email:e,role:r});await signOut(secondaryAuth);Swal.fire('Success','Created','success');}
+    function loadUsers(){onSnapshot(collection(db,"users"),s=>{let h="";s.forEach(d=>{h+=`<tr><td>${d.data().email}</td><td>${d.data().role}</td><td><button class="btn btn-sm btn-light-danger" onclick="deleteUser('${d.id}')">X</button></td></tr>`});document.getElementById('usersTableBody').innerHTML=h;});}
+    window.deleteUser=async(id)=>{if(confirm("Remove?"))await deleteDoc(doc(db,"users",id));}
+    window.processRegistration=async()=>{const t=document.getElementById('troopNumberInput').value;const txt=document.getElementById('bulkInput').value;const l=txt.split('\n');let id=1;try{const c=await getDoc(doc(db,"system","scout_counter"));if(c.exists())id=c.data().val+1;}catch(e){}document.getElementById('regProgress').style.display='flex';window.recentScouts=[];for(let r of l){let p=r.split(',');if(p.length>=1){let sID=`KG${t}/${id.toString().padStart(3,'0')}`;await setDoc(doc(db,"scouts",`KG${t}_${id.toString().padStart(3,'0')}`),{name:p[0],troop:`Troop ${t}`,district:p[2]||'',id:sID,isMissing:false});window.recentScouts.push({id:sID,name:p[0],troop:`Troop ${t}`});id++;}}await setDoc(doc(db,"system","scout_counter"),{val:id-1});document.getElementById('regProgress').style.display='none';document.getElementById('btnPrint').disabled=false;showPreview();Swal.fire('Done','Registered','success');}
+    window.recentScouts=[];function showPreview(){let h="";window.recentScouts.forEach(s=>{h+=`<div class="col-4"><div class="border rounded p-2 bg-white small text-center"><b>${s.id}</b><br>${s.name}</div></div>`});document.getElementById('stickerPreview').innerHTML=h;}
+    window.generatePDF=()=>{const{jsPDF}=window.jspdf;const doc=new jsPDF();let x=10,y=10,w=45,h=65,c=0,r=0;const qc=document.getElementById('qr-hidden');window.recentScouts.forEach((s,i)=>{if(i>0&&i%16===0){doc.addPage();c=0;r=0}let cx=x+(c*(w+2)),cy=y+(r*(h+2));doc.rect(cx,cy,w,h);doc.setFontSize(10);doc.text(s.id,cx+w/2,cy+40,{align:"center"});qc.innerHTML='';new QRCode(qc,{text:s.id,width:100,height:100});let img=qc.querySelector('img').src;doc.addImage(img,'PNG',cx+(w-25)/2,cy+10,25,25);c++;if(c>=4){c=0;r++}});doc.save('IDs.pdf');}
+    window.triggerEmergency=async()=>{const{value:t}=await Swal.fire({title:'Broadcast',input:'text'});if(t)await set(ref(rtdb, 'system/broadcast'),{message:t,timestamp:serverTimestamp()});}
+    function listenForEmergencies(){onValue(ref(rtdb, 'system/broadcast'),d=>{if(d.exists()&&d.val().message)Swal.fire({icon:'warning',title:'Alert',text:d.val().message})});}
+    window.loadView=(v,el)=>{document.querySelectorAll('.view-section').forEach(d=>d.style.display='none');document.getElementById('view-'+v).style.display='block';const t={'dashboard':'Dashboard','events':'Events','staff':'Staff','registration':'Registration','reports':'Reports','directory':'Directory','logs':'Logs','leaderboard':'Leaderboard'};document.getElementById('pageTitle').innerText=t[v];}
 </script>
 </body>
 </html>
