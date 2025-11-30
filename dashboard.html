@@ -6,75 +6,84 @@
     <title>KEBOREE ADMIN</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
-    
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <style>
-        body{background:#f4f6f9;} .sidebar{height:100vh;width:250px;position:fixed;background:#fff;padding-top:20px;border-right:1px solid #ddd;}
-        .main{margin-left:250px;padding:30px;} .nav-link{padding:15px;color:#555;cursor:pointer;} .nav-link:hover{background:#f0f0f0;}
-        .card{border:none;border-radius:15px;box-shadow:0 4px 10px rgba(0,0,0,0.05);}
-        .hidden{display:none;} .badge-in{background:#d1fae5;color:#065f46;} .badge-out{background:#fee2e2;color:#991b1b;}
+        body{background:#f4f6f9;font-family:sans-serif;}
+        .sidebar{height:100vh;width:250px;position:fixed;background:#fff;padding-top:20px;border-right:1px solid #ddd;z-index:1000;}
+        .main{margin-left:250px;padding:30px;}
+        .nav-link{padding:12px 20px;color:#333;cursor:pointer;} .nav-link:hover,.nav-link.active{background:#eef2ff;color:#4f46e5;font-weight:bold;}
+        .card{border:none;border-radius:15px;box-shadow:0 2px 10px rgba(0,0,0,0.05);background:#fff;}
+        .badge-in{background:#d1fae5;color:#065f46;} .badge-out{background:#fee2e2;color:#991b1b;}
+        .btn-lock-on{background:#ef4444;color:white;animation:pulse 2s infinite;}
+        @keyframes pulse{0%{box-shadow:0 0 0 0 rgba(239,68,68,0.7);}70%{box-shadow:0 0 0 10px rgba(0,0,0,0);}100%{box-shadow:0 0 0 0 rgba(0,0,0,0);}}
     </style>
 </head>
 <body>
 
 <div class="sidebar">
-    <h3 class="text-center fw-bold text-primary">KEBOREE</h3>
-    <div class="nav flex-column mt-4">
-        <a class="nav-link" onclick="show('dashboard')"><i class="bi bi-grid me-2"></i> Dashboard</a>
-        <a class="nav-link" onclick="show('logs')"><i class="bi bi-list-task me-2"></i> Scan Logs</a>
-        <a class="nav-link" onclick="show('reg')"><i class="bi bi-person-plus me-2"></i> Registration</a>
-        <a class="nav-link" onclick="show('staff')"><i class="bi bi-people me-2"></i> Staff</a>
-        <a class="nav-link text-danger mt-5" onclick="logout()">Logout</a>
-    </div>
+    <h3 class="text-center fw-bold text-primary mb-4">KEBOREE</h3>
+    <a class="nav-link active" onclick="view('dash',this)"><i class="bi bi-grid me-2"></i> Dashboard</a>
+    <a class="nav-link" onclick="view('reg',this)"><i class="bi bi-person-vcard me-2"></i> Registration</a>
+    <a class="nav-link" onclick="view('logs',this)"><i class="bi bi-list-task me-2"></i> Logs</a>
+    <a class="nav-link" onclick="view('alert',this)"><i class="bi bi-bell me-2"></i> Alerts <span id="alertBadge" class="badge bg-danger ms-2" style="display:none">0</span></a>
+    <a class="nav-link" onclick="view('staff',this)"><i class="bi bi-people me-2"></i> Staff</a>
+    <a class="nav-link" onclick="view('events',this)"><i class="bi bi-calendar me-2"></i> Events</a>
+    <a class="nav-link mt-5 text-danger" onclick="logout()"><i class="bi bi-box-arrow-left me-2"></i> Logout</a>
 </div>
 
 <div class="main">
     <div class="d-flex justify-content-between mb-4">
-        <h4>Admin Panel</h4>
+        <h3 id="pgTitle">Dashboard</h3>
         <div>
-            <button id="btnLock" onclick="toggleLock()" class="btn btn-success">System Active</button>
-            <button onclick="broadcast()" class="btn btn-danger ms-2">Broadcast</button>
+            <button id="btnLock" onclick="toggleLock()" class="btn btn-outline-success fw-bold">System Active</button>
+            <button onclick="broadcast()" class="btn btn-dark ms-2">Broadcast</button>
         </div>
     </div>
 
-    <div id="dashboard" class="page">
-        <div class="row g-3">
-            <div class="col-md-4"><div class="card p-4"><h5>Total Scouts</h5><h2 id="totScouts">0</h2></div></div>
-            <div class="col-md-4"><div class="card p-4"><h5>Total Scans</h5><h2 id="totLogs">0</h2></div></div>
-            <div class="col-md-4"><div class="card p-4"><h5>Status</h5><h4 class="text-success">Online</h4></div></div>
+    <div id="dash" class="page">
+        <div class="row g-3 mb-4">
+            <div class="col-md-4"><div class="card p-4"><h6>Total Registered</h6><h2 id="totReg">0</h2></div></div>
+            <div class="col-md-4"><div class="card p-4"><h6>Total Scans</h6><h2 id="totScan">0</h2></div></div>
+            <div class="col-md-4"><div class="card p-4"><h6>Status</h6><h4 class="text-success">Online</h4></div></div>
         </div>
-        <div id="alertsBox" class="mt-4"></div>
+        <h5>Live Events</h5>
+        <div id="liveCards" class="row g-3"></div>
     </div>
 
-    <div id="logs" class="page hidden">
+    <div id="reg" class="page" style="display:none;">
+        <div class="card p-4">
+            <h5>Bulk Register</h5>
+            <div class="row">
+                <div class="col-md-3"><input id="regT" class="form-control" placeholder="Troop No"></div>
+                <div class="col-md-9"><textarea id="regD" class="form-control" rows="5" placeholder="Name, Troop Name, District..."></textarea></div>
+            </div>
+            <button onclick="doReg()" class="btn btn-primary w-100 mt-3">Register & Generate</button>
+            <hr>
+            <button id="btnPDF" onclick="dlPDF()" class="btn btn-dark" disabled>Download PDF</button>
+            <div id="qrArea" class="row g-2 mt-3 bg-light p-2" style="height:300px;overflow:auto;"></div>
+        </div>
+    </div>
+
+    <div id="logs" class="page" style="display:none;">
         <div class="card p-4">
             <h5>Live Logs</h5>
-            <table class="table"><thead class="table-light"><tr><th>Time</th><th>ID</th><th>Event</th><th>Action</th></tr></thead><tbody id="logTable"></tbody></table>
+            <table class="table"><thead class="table-light"><tr><th>Time</th><th>ID</th><th>Event</th><th>Action</th></tr></thead><tbody id="logTab"></tbody></table>
         </div>
     </div>
 
-    <div id="reg" class="page hidden">
-        <div class="card p-4">
-            <h5>Register Scouts</h5>
-            <input id="regTroop" class="form-control mb-2" placeholder="Troop No (e.g. 25)">
-            <textarea id="regData" class="form-control mb-2" rows="5" placeholder="Name, Troop, District..."></textarea>
-            <button onclick="register()" class="btn btn-primary w-100">Generate IDs</button>
-            <hr>
-            <button onclick="downloadPDF()" class="btn btn-dark w-100" id="dlBtn" disabled>Download PDF</button>
-            <div id="qrArea" class="row g-2 mt-3 bg-light p-2"></div>
-        </div>
+    <div id="alert" class="page" style="display:none;">
+        <button onclick="clrAlert()" class="btn btn-sm btn-light border mb-3">Clear All</button>
+        <div id="alertBox"></div>
     </div>
 
-    <div id="staff" class="page hidden">
-        <div class="card p-4">
-            <input id="sEmail" class="form-control mb-2" placeholder="Email">
-            <input id="sPass" class="form-control mb-2" placeholder="Password">
-            <select id="sRole" class="form-select mb-2"><option value="scanner">Scanner</option><option value="admin">Admin</option></select>
-            <button onclick="addStaff()" class="btn btn-primary">Add User</button>
-        </div>
-    </div>
+    <div id="hiddenQr" style="display:none;"></div>
+    
+    <div id="events" class="page" style="display:none;"><div class="card p-4"><input id="en" placeholder="Name" class="form-control mb-2"><input id="eb" placeholder="Buttons (IN,OUT)" class="form-control mb-2"><button onclick="addEv()" class="btn btn-primary">Add Event</button><div id="evL" class="mt-3"></div></div></div>
+    <div id="staff" class="page" style="display:none;"><div class="card p-4"><input id="se" placeholder="Email" class="form-control mb-2"><input id="sp" placeholder="Pass" class="form-control mb-2"><select id="sr" class="form-control mb-2"><option value="scanner">Scanner</option><option value="admin">Admin</option></select><button onclick="addSt()" class="btn btn-primary">Add Staff</button></div></div>
 </div>
+
+<audio id="snd" src="data:audio/wav;base64,UklGRl9vT19XQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YU"></audio>
 
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script type="module">
@@ -83,7 +92,6 @@
     import { getDatabase, ref, set, push, onValue, remove } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
     import { getAuth, signOut, onAuthStateChanged, createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
-    // 🔥 YOUR FIXED CONFIG
     const firebaseConfig = {
         apiKey: "AIzaSyBsBsKnXv6FgYVk7OLo0XagFSBZgYajuNA",
         authDomain: "qr-system-02---web-based.firebaseapp.com",
@@ -98,128 +106,103 @@
     const db = getFirestore(app);
     const rtdb = getDatabase(app);
     const auth = getAuth(app);
-    const secAuth = initializeApp(firebaseConfig, "Secondary").getAuth(); // For creating users
+    const sec = initializeApp(firebaseConfig,"Sec").getAuth();
+    
+    let locked=false, tempS=[];
 
-    let isLocked = false;
-    window.tempScouts = [];
-
-    onAuthStateChanged(auth, u => { if(!u) window.location.href="index.html"; else init(); });
+    onAuthStateChanged(auth, u=>{ if(!u) location.href="index.html"; else init(); });
 
     function init() {
-        // Lock Status
-        onValue(ref(rtdb, 'system/status/locked'), s => {
-            isLocked = s.val() || false;
-            const btn = document.getElementById('btnLock');
-            if(isLocked) { btn.innerText="SYSTEM LOCKED"; btn.className="btn btn-danger"; }
-            else { btn.innerText="SYSTEM ACTIVE"; btn.className="btn btn-success"; }
+        // Lock
+        onValue(ref(rtdb,'system/status/locked'), s=>{
+            locked=s.val();
+            document.getElementById('btnLock').className = locked ? "btn btn-lock-on" : "btn btn-outline-success fw-bold";
+            document.getElementById('btnLock').innerText = locked ? "SYSTEM LOCKED" : "System Active";
         });
 
         // Logs
-        onValue(ref(rtdb, 'logs'), s => {
-            const d = s.val();
-            if(d) {
-                const logs = Object.values(d).reverse().slice(0,50);
-                document.getElementById('totLogs').innerText = Object.keys(d).length;
-                let h = "";
-                logs.forEach(l => {
-                    let time = l.timestamp ? new Date(l.timestamp).toLocaleTimeString() : "N/A"; // ✅ Fixed Time
-                    let cls = l.action.includes('IN') ? 'badge-in' : 'badge-out';
-                    h += `<tr><td>${time}</td><td>${l.scoutID}<br><small class="text-muted">${l.scoutName}</small></td><td>${l.eventName}</td><td><span class="badge ${cls}">${l.action}</span></td></tr>`;
-                });
-                document.getElementById('logTable').innerHTML = h;
-            }
-        });
-        
-        // Missing Alerts
-        onValue(ref(rtdb, 'system/alerts'), s => {
-            const d = s.val();
-            let h = "";
-            if(d) {
-                Object.values(d).reverse().forEach(a => {
-                    h += `<div class="alert alert-danger">⚠️ Found: <b>${a.scoutName}</b> by ${a.scanner}</div>`;
-                });
-            }
-            document.getElementById('alertsBox').innerHTML = h;
+        onValue(ref(rtdb,'logs'), s=>{
+            const d=s.val(); if(!d) return;
+            const l=Object.values(d);
+            document.getElementById('totScan').innerText=l.length;
+            let h="";
+            l.slice(-50).reverse().forEach(x=>{
+                let t = new Date(x.timestamp).toLocaleTimeString();
+                let c = x.action.includes('IN')?'badge-in':'badge-out';
+                h+=`<tr><td>${t}</td><td><b>${x.scoutID}</b><br><small>${x.scoutName}</small></td><td>${x.eventName}</td><td><span class="badge ${c}">${x.action}</span></td></tr>`;
+            });
+            document.getElementById('logTab').innerHTML=h;
+
+            // Cards
+            let st={}; l.forEach(x=>{ if(!st[x.eventName])st[x.eventName]={in:0,out:0}; if(x.action.includes('IN'))st[x.eventName].in++; if(x.action.includes('OUT'))st[x.eventName].out++; });
+            let ch=""; Object.keys(st).forEach(k=>{ ch+=`<div class="col-md-3"><div class="card p-3 border-primary"><h6>${k}</h6><h3>${Math.max(0, st[k].in-st[k].out)} <small class="fs-6 text-muted">Inside</small></h3></div></div>`; });
+            document.getElementById('liveCards').innerHTML=ch;
         });
 
-        onSnapshot(collection(db, "scouts"), s => document.getElementById('totScouts').innerText = s.size);
+        // Alerts
+        onValue(ref(rtdb,'system/alerts'), s=>{
+            const d=s.val(); if(!d) { document.getElementById('alertBox').innerHTML=""; return; }
+            const a=Object.values(d).reverse();
+            document.getElementById('alertBadge').innerText=a.length; document.getElementById('alertBadge').style.display='inline-block';
+            let h=""; a.forEach(x=>{ h+=`<div class="alert alert-danger">⚠️ Found: <b>${x.scoutName}</b> (${new Date(x.timestamp).toLocaleTimeString()})</div>`; });
+            document.getElementById('alertBox').innerHTML=h; document.getElementById('snd').play().catch(()=>{});
+        });
+
+        onSnapshot(collection(db,"scouts"), s=>document.getElementById('totReg').innerText=s.size);
+        onSnapshot(collection(db,"events"), s=>{ let h=""; s.forEach(d=>h+=`<div class="border p-2 mb-1">${d.data().name}</div>`); document.getElementById('evL').innerHTML=h; });
     }
 
-    window.toggleLock = async () => await set(ref(rtdb, 'system/status/locked'), !isLocked);
-    window.broadcast = async () => { const m = prompt("Message?"); if(m) await set(ref(rtdb, 'system/broadcast'), {message:m, timestamp:Date.now()}); }
-    
-    window.registerScouts = async () => {
-        const tr = document.getElementById('regTroop').value;
-        const txt = document.getElementById('regData').value;
-        if(!tr || !txt) return alert("Missing Info");
-
-        let id = 1; 
-        try { const c = await getDoc(doc(db,"system","scout_counter")); if(c.exists()) id = c.data().val + 1; }catch(e){}
-
-        const lines = txt.split('\n');
-        window.tempScouts = [];
-        let previewHTML = "";
-
-        for(let l of lines) {
-            let p = l.split(',');
-            if(p.length>=1) {
-                let sid = `KG${tr}/${id.toString().padStart(3,'0')}`;
-                let did = `KG${tr}_${id.toString().padStart(3,'0')}`;
-                let data = {id:sid, name:p[0], troop:`Troop ${tr}`, docId:did, isMissing:false};
-                
-                await setDoc(doc(db,"scouts",did), data);
-                window.tempScouts.push(data);
-                previewHTML += `<div class="col-3 text-center border p-2"><div id="qr_${id}"></div><small>${sid}</small></div>`;
+    // REGISTRATION (FIXED)
+    window.doReg = async () => {
+        const tr=document.getElementById('regT').value; const tx=document.getElementById('regD').value;
+        if(!tr||!tx) return alert('Data Missing');
+        
+        let id=1; try{const c=await getDoc(doc(db,"system","cnt")); if(c.exists())id=c.data().v+1;}catch(e){}
+        tempS=[]; let h="";
+        
+        for(let l of tx.split('\n')) {
+            let p=l.split(','); if(p.length>=1){
+                let sid=`KG${tr}/${id.toString().padStart(3,'0')}`;
+                let did=`KG${tr}_${id.toString().padStart(3,'0')}`;
+                let d={id:sid, name:p[0], troop:`Troop ${tr}`, isMissing:false};
+                await setDoc(doc(db,"scouts",did), d);
+                tempS.push(d);
+                h+=`<div class="col-3 border p-2 text-center"><div id="q_${id}"></div><small>${sid}</small></div>`;
                 id++;
             }
         }
-        await setDoc(doc(db,"system","scout_counter"), {val:id-1});
+        await setDoc(doc(db,"system","cnt"),{v:id-1});
+        document.getElementById('qrArea').innerHTML=h;
         
-        document.getElementById('qrArea').innerHTML = previewHTML;
-        
-        // Generate QR
-        setTimeout(() => {
-            window.tempScouts.forEach((s, index) => {
-                // Calculate original index based on counter isn't reliable for DOM ID, using array index logic
-                // Fix: Using array index for DOM query
-                let qrContainer = document.querySelector(`#qrArea > div:nth-child(${index+1}) > div`);
-                new QRCode(qrContainer, {text: s.id, width: 80, height: 80});
-            });
-            document.getElementById('dlBtn').disabled = false;
-        }, 1000);
+        setTimeout(()=>{
+            tempS.forEach((s,i)=>{ new QRCode(document.getElementById(`q_${i+1}`),{text:s.id,width:80,height:80}); });
+            document.getElementById('btnPDF').disabled=false;
+        },500);
+        alert('Registered!');
     }
 
-    window.downloadPDF = () => {
-        const doc = new window.jspdf.jsPDF();
-        let x=10, y=10, c=0, r=0;
-        window.tempScouts.forEach((s, i) => {
-            if(i>0 && i%16===0) { doc.addPage(); c=0; r=0; }
-            let cx = 10+(c*47); let cy = 10+(r*67);
-            doc.rect(cx,cy,45,65);
-            doc.setFontSize(10); doc.text(s.id, cx+22, cy+40, {align:'center'});
-            
-            // Get QR image from DOM
-            let qrEl = document.querySelector(`#qrArea > div:nth-child(${i+1}) > div img`);
-            if(qrEl) doc.addImage(qrEl.src, 'PNG', cx+10, cy+10, 25, 25);
-            
-            c++; if(c>=4) {c=0; r++;}
-        });
-        doc.save("IDs.pdf");
+    window.dlPDF = () => {
+        const doc=new window.jspdf.jsPDF(); let x=10,y=10,c=0,r=0;
+        tempS.forEach((s,i)=>{
+            if(i>0&&i%16==0){doc.addPage();c=0;r=0;}
+            let cx=10+(c*47), cy=10+(r*67); doc.rect(cx,cy,45,65);
+            doc.setFontSize(10); doc.text(s.id,cx+22,cy+40,{align:'center'});
+            doc.setFontSize(8); doc.text(s.name.substring(0,15),cx+22,cy+45,{align:'center'});
+            let img=document.getElementById(`q_${i+1}`).querySelector('img');
+            if(img) doc.addImage(img.src,'PNG',cx+10,cy+10,25,25);
+            c++;if(c>=4){c=0;r++;}
+        }); doc.save('IDs.pdf');
     }
 
-    window.addStaff = async () => {
-        try {
-            await createUserWithEmailAndPassword(secAuth, document.getElementById('sEmail').value, document.getElementById('sPass').value);
-            await setDoc(doc(db,"users",document.getElementById('sEmail').value), {role:document.getElementById('sRole').value});
-            alert('Added');
-        } catch(e) { alert(e.message); }
-    }
-
-    window.show = (id) => { document.querySelectorAll('.page').forEach(p=>p.classList.add('hidden')); document.getElementById(id).classList.remove('hidden'); }
-    window.logout = () => signOut(auth).then(()=>location.href="index.html");
-
-    // Expose
-    window.toggleLock=toggleLock; window.broadcast=broadcast; window.register=registerScouts; window.downloadPDF=downloadPDF; window.addStaff=addStaff; window.show=show; window.logout=logout;
+    // ACTIONS
+    window.toggleLock = async () => await set(ref(rtdb,'system/status/locked'), !locked);
+    window.broadcast = async () => { const m=prompt("Msg?"); if(m) await set(ref(rtdb,'system/broadcast'),{m:m,t:Date.now()}); }
+    window.clrAlert = async () => { if(confirm('Clear?')) await remove(ref(rtdb,'system/alerts')); }
+    window.addEv = async () => { await setDoc(doc(collection(db,"events")),{name:document.getElementById('en').value,actions:document.getElementById('eb').value.split(','),active:true}); }
+    window.addSt = async () => { await createUserWithEmailAndPassword(sec,document.getElementById('se').value,document.getElementById('sp').value); await setDoc(doc(db,"users",document.getElementById('se').value),{role:document.getElementById('sr').value}); alert('Added'); }
+    
+    window.view = (v,e) => { document.querySelectorAll('.page').forEach(x=>x.style.display='none'); document.getElementById(v).style.display='block'; document.getElementById('pgTitle').innerText=v.toUpperCase(); }
+    window.logout = () => signOut(auth).then(()=>location.href='index.html');
 </script>
 </body>
 </html>
