@@ -2,42 +2,51 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Scanner</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
     <style>
-        body { background:#000; color:#fff; height:100vh; display:flex; flex-direction:column; }
-        #reader { flex-grow:1; width:100%; object-fit:cover; }
-        .controls { padding:20px; background:#111; text-align:center; }
-        .btn-scan { width:80px; height:80px; border-radius:50%; font-size:2rem; border:4px solid white; background:red; color:white; }
-        .btn-scan.active { background:green; }
-        #locked { position:absolute; top:0; left:0; width:100%; height:100%; background:red; z-index:999; display:none; justify-content:center; align-items:center; font-size:2rem; font-weight:bold; }
-        #broadcast { position:absolute; top:0; left:0; width:100%; height:100%; background:yellow; color:black; z-index:990; display:none; justify-content:center; align-items:center; padding:20px; text-align:center; }
+        body{background:#000;color:#fff;height:100vh;overflow:hidden;display:flex;flex-direction:column;}
+        #reader{width:100%;height:100%;object-fit:cover;position:absolute;}
+        .ui{position:absolute;width:100%;height:100%;z-index:10;display:flex;flex-direction:column;justify-content:space-between;padding:20px;pointer-events:none;}
+        .pointer{pointer-events:auto;}
+        .glass{background:rgba(255,255,255,0.2);backdrop-filter:blur(10px);padding:10px;border-radius:15px;margin-bottom:10px;}
+        select,input{background:transparent;border:none;color:#fff;width:100%;outline:none;font-weight:bold;} option{background:#000;}
+        .btn-scan{width:80px;height:80px;background:#0d6efd;border-radius:50%;border:4px solid rgba(255,255,255,0.5);display:flex;align-items:center;justify-content:center;font-size:2rem;color:#fff;}
+        .btn-scan.stop{background:#dc3545;}
+        #locked{position:absolute;width:100%;height:100%;background:#ef4444;z-index:2000;display:none;align-items:center;justify-content:center;font-size:2rem;font-weight:bold;}
+        #bcast{position:absolute;top:0;width:100%;background:#ffc107;color:#000;padding:15px;z-index:1500;display:none;text-align:center;}
+        .swal2-popup{background:#222!important;color:#fff!important;}
     </style>
 </head>
 <body>
 
 <div id="locked"><i class="bi bi-lock-fill"></i> LOCKED</div>
-<div id="broadcast"><h3>ANNOUNCEMENT</h3><p id="bMsg" class="lead fw-bold">...</p><button class="btn btn-dark" onclick="this.parentElement.style.display='none'">OK</button></div>
+<div id="bcast"><h5 id="bTxt"></h5><button onclick="this.parentElement.style.display='none'" class="btn btn-sm btn-dark">OK</button></div>
 
-<select id="eventSelect" class="form-select m-3 w-auto bg-dark text-white"><option value="">Select Event</option></select>
 <div id="reader"></div>
-<div class="controls">
-    <input id="manual" class="form-control mb-2" placeholder="Manual ID">
-    <button onclick="manualScan()" class="btn btn-secondary w-100 mb-3">Submit ID</button>
-    <button id="camBtn" class="btn-scan active" onclick="toggleCam()"><i class="bi bi-camera-video"></i></button>
+<div class="ui">
+    <div class="pointer">
+        <div class="glass"><select id="cam"><option>Auto Camera</option></select></div>
+        <div class="glass"><select id="evt"><option>Loading...</option></select></div>
+        <div class="glass"><input id="mid" placeholder="ID"><button onclick="man()" class="btn btn-sm text-success">GO</button></div>
+    </div>
+    <div class="d-flex justify-content-center pointer pb-4">
+        <button id="btn" class="btn-scan" onclick="tog()"><i class="bi bi-qr-code"></i></button>
+    </div>
 </div>
+
+<audio id="bp" src="data:audio/wav;base64,UklGRl9vT19XQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YU"></audio>
 
 <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-    import { getFirestore, collection, doc, getDoc, onSnapshot, updateDoc, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-    import { getDatabase, ref, push, onValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+    import { getFirestore, collection, doc, getDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+    import { getDatabase, ref, push, onValue, update } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
     import { getAuth, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
-    // 🔴 YOUR CONFIG
     const firebaseConfig = {
         apiKey: "AIzaSyBsBsKnXv6FgYVk7OLo0XagFSBZgYajuNA",
         authDomain: "qr-system-02---web-based.firebaseapp.com",
@@ -52,95 +61,88 @@
     const db = getFirestore(app);
     const rtdb = getDatabase(app);
     const auth = getAuth(app);
+    
+    let qr, curEvt, scan=false, locked=false, curScout;
 
-    let html5QrCode, selectedEvent, isScanning=false, currentScout;
-
-    onAuthStateChanged(auth, u => { if(!u) location.href='index.html'; else init(); });
+    onAuthStateChanged(auth, u=>{ if(!u) location.href='index.html'; else init(); });
 
     function init() {
-        onSnapshot(collection(db,"events"), s => {
+        Html5Qrcode.getCameras().then(d=>{
+            let h=""; d.forEach(x=>h+=`<option value="${x.id}">${x.label}</option>`);
+            document.getElementById('cam').innerHTML=h;
+        });
+
+        onSnapshot(collection(db,"events"), s=>{
             let h='<option value="">Select Event</option>';
-            s.forEach(d => { if(d.data().active) h+=`<option value="${d.id}" data-acts='${JSON.stringify(d.data().actions)}'>${d.data().name}</option>` });
-            document.getElementById('eventSelect').innerHTML=h;
+            s.forEach(d=>{ if(d.data().active) h+=`<option value="${d.id}" data-a='${JSON.stringify(d.data().actions)}'>${d.data().name}</option>` });
+            document.getElementById('evt').innerHTML=h;
         });
-        document.getElementById('eventSelect').addEventListener('change', e => {
-            let o = e.target.options[e.target.selectedIndex];
-            selectedEvent = e.target.value ? {id:e.target.value, name:o.text, actions:JSON.parse(o.dataset.acts)} : null;
-        });
-
-        // Lock Listener
-        onValue(ref(rtdb, 'system/status/locked'), s => {
-            if(s.val()) { document.getElementById('locked').style.display='flex'; if(isScanning) stopCam(); }
-            else document.getElementById('locked').style.display='none';
+        document.getElementById('evt').addEventListener('change', e=>{
+            let o=e.target.options[e.target.selectedIndex];
+            curEvt=e.target.value?{id:e.target.value, name:o.text, acts:JSON.parse(o.dataset.a)}:null;
         });
 
-        // Broadcast Listener
-        onValue(ref(rtdb, 'system/broadcast'), s => {
-            let d = s.val();
-            if(d && (Date.now() - d.timestamp) < 120000) { // 2 Mins Expiry
-                document.getElementById('bMsg').innerText = d.message;
-                document.getElementById('broadcast').style.display = 'flex';
+        onValue(ref(rtdb,'system/status/locked'), s=>{
+            locked=s.val(); document.getElementById('locked').style.display=locked?'flex':'none';
+            if(locked && scan) stop();
+        });
+
+        onValue(ref(rtdb,'system/broadcast'), s=>{
+            let d=s.val(); 
+            if(d && (Date.now()-d.t)/1000 < 60) { // 60 Sec Display
+                document.getElementById('bTxt').innerText=d.m;
+                document.getElementById('bcast').style.display='block';
+                document.getElementById('bp').play().catch(()=>{});
             }
         });
     }
 
-    window.toggleCam = () => { if(isScanning) stopCam(); else startCam(); }
+    window.tog=()=>{ if(scan) stop(); else start(); }
 
-    function startCam() {
-        html5QrCode = new Html5Qrcode("reader");
-        html5QrCode.start({ facingMode: "environment" }, { fps: 10, qrbox: 250 }, onScan, ()=>{});
-        isScanning = true;
-        document.getElementById('camBtn').classList.remove('active');
-    }
-    function stopCam() {
-        html5QrCode.stop().then(() => { html5QrCode.clear(); isScanning=false; document.getElementById('camBtn').classList.add('active'); });
+    function start() {
+        if(!curEvt) return Swal.fire('Select Event');
+        let cid=document.getElementById('cam').value;
+        qr=new Html5Qrcode("reader");
+        qr.start(cid, {fps:10, qrbox:250}, onScan);
+        scan=true; document.getElementById('btn').classList.add('stop');
     }
 
-    window.manualScan = () => onScan(document.getElementById('manual').value);
+    function stop() {
+        if(qr) qr.stop().then(()=>{ qr.clear(); scan=false; document.getElementById('btn').classList.remove('stop'); });
+    }
+
+    window.man=()=>onScan(document.getElementById('mid').value);
 
     async function onScan(txt) {
-        if(!selectedEvent) return Swal.fire('Select Event');
-        stopCam();
+        if(!txt) return;
+        stop(); document.getElementById('bp').play().catch(()=>{}); navigator.vibrate(200);
         
-        try {
-            let did = txt.replace('/','_');
-            let snap = await getDoc(doc(db,"scouts",did));
-            
-            if(!snap.exists()) {
-                let q = await getDocs(query(collection(db,"scouts"), where("id","==",txt)));
-                if(q.empty) throw new Error('ID Not Found');
-                snap = q.docs[0];
-            }
-            currentScout = snap.data();
-            
-            let btns = "";
-            selectedEvent.actions.forEach(a => btns += `<button onclick="log('${a}')" class="btn btn-primary w-100 mb-2">${a}</button>`);
-            
-            let warning = currentScout.isMissing ? '<div class="alert alert-danger">⚠️ MISSING SCOUT!</div>' : '';
-            
-            Swal.fire({
-                title: currentScout.name,
-                html: `${warning}<p>${currentScout.id}</p>${btns}`,
-                showConfirmButton: false
-            });
-        } catch(e) { Swal.fire('Error', 'ID Invalid', 'error'); }
+        let did=txt.replace('/','_');
+        let snap=await getDoc(doc(db,"scouts",did));
+        if(!snap.exists()) return Swal.fire('Not Found');
+        
+        curScout=snap.data();
+        let b=""; curEvt.acts.forEach(a=>b+=`<button onclick="save('${a}')" class="btn btn-success w-100 mb-2">${a}</button>`);
+        let warn=curScout.isMissing?`<div class="alert alert-danger fw-bold">⚠️ MISSING SCOUT</div>`:'';
+        
+        Swal.fire({
+            title: curScout.name,
+            html: `${warn}<p>${curScout.id}</p>${b}`,
+            showConfirmButton:false, showCancelButton:true
+        });
     }
 
-    window.log = (act) => {
-        Swal.showLoading();
-        push(ref(rtdb, 'logs'), {
-            scoutID: currentScout.id, scoutName: currentScout.name, scoutTroop: currentScout.troop,
-            eventID: selectedEvent.id, eventName: selectedEvent.name,
-            action: act, scannedBy: auth.currentUser.email,
-            timestamp: Date.now() // ✅ FIX TIME
-        }).then(() => {
-            if(currentScout.isMissing) {
-                push(ref(rtdb, 'system/alerts'), { scoutName:currentScout.name, scanner:auth.currentUser.email, timestamp:Date.now() });
-                updateDoc(doc(db,"scouts",currentScout.docId), {isMissing:false});
-            }
-            Swal.close(); Swal.fire('Saved', '', 'success');
-            document.getElementById('manual').value="";
+    window.save=(a)=>{
+        push(ref(rtdb,'logs'), {
+            scoutID:curScout.id, scoutName:curScout.name, scoutTroop:curScout.troop,
+            eventID:curEvt.id, eventName:curEvt.name, action:a, 
+            scannedBy:auth.currentUser.email, timestamp:Date.now()
         });
+        if(curScout.isMissing) {
+            push(ref(rtdb,'system/alerts'), {scoutName:curScout.name, scanner:auth.currentUser.email, timestamp:Date.now()});
+        }
+        Swal.close(); Swal.fire({icon:'success',title:'Saved',timer:800,showConfirmButton:false});
+        start();
     }
 </script>
 </body>
