@@ -4,148 +4,92 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Keboree Scanner</title>
-    
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
     
     <style>
-        /* --- CLEAN MINIMAL THEME --- */
-        body { 
-            background-color: #f8f9fa; font-family: 'Poppins', sans-serif; 
-            height: 100vh; overflow-y: auto; padding: 20px; 
-            display: flex; flex-direction: column; align-items: center;
-        }
-
-        .header-text { 
-            color: #0d6efd; font-weight: 700; text-transform: uppercase; 
-            letter-spacing: 1px; margin-bottom: 20px; text-align: center; 
-        }
-
-        /* Camera Box (Fixed Size) */
-        .camera-wrapper {
-            width: 100%; max-width: 320px; aspect-ratio: 1/1;
-            background-color: #000; border-radius: 30px;
-            overflow: hidden; position: relative;
-            box-shadow: 0 15px 40px rgba(0,0,0,0.15);
-            border: 4px solid #fff; margin-bottom: 20px;
-            display: flex; align-items: center; justify-content: center;
-        }
-        
-        #reader { width: 100%; height: 100%; object-fit: cover; }
-        #reader video { object-fit: cover; width: 100% !important; height: 100% !important; border-radius: 26px; }
-        
-        /* Placeholder Icon */
-        .cam-placeholder { font-size: 4rem; color: #333; position: absolute; z-index: 0; }
-
-        /* Input Area */
-        .controls-card {
-            background: #fff; padding: 25px; border-radius: 25px; width: 100%; max-width: 400px;
-            box-shadow: 0 5px 20px rgba(0,0,0,0.05); margin-bottom: 20px;
-        }
-        .form-label { font-size: 0.85rem; font-weight: 600; color: #6c757d; margin-bottom: 5px; }
-        .form-control, .form-select {
-            border: 2px solid #f1f3f5; border-radius: 12px; padding: 12px; font-weight: 500; background: #f8f9fa;
-        }
-        .form-control:focus, .form-select:focus { border-color: #0d6efd; background: #fff; box-shadow: none; }
-
-        /* Buttons */
-        .btn-scan {
-            width: 100%; max-width: 400px; background-color: #0d6efd; color: white; 
-            border: none; padding: 16px; font-size: 1.1rem; font-weight: 700; 
-            border-radius: 50px; box-shadow: 0 8px 20px rgba(13, 110, 253, 0.3); transition: 0.2s;
-        }
-        .btn-scan:active { transform: scale(0.98); }
-        .btn-scan.stop { background-color: #dc3545; box-shadow: 0 8px 20px rgba(220, 53, 69, 0.3); }
-
-        .btn-flash {
-            position: absolute; top: 15px; right: 15px; z-index: 10;
-            background: rgba(255,255,255,0.2); border: none; color: white;
-            width: 40px; height: 40px; border-radius: 50%; backdrop-filter: blur(5px);
-        }
-        .btn-flash.active { color: #ffd700; background: rgba(255,255,255,0.4); }
-
-        /* Popups & Modals */
-        .swal2-popup { border-radius: 25px !important; padding: 20px !important; }
-        .action-btn { width: 100%; padding: 15px; margin: 8px 0; border-radius: 15px; border: none; font-weight: 700; }
-        .btn-in { background: #d1fae5; color: #065f46; }
-        .btn-out { background: #fee2e2; color: #991b1b; }
-        .btn-other { background: #e0e7ff; color: #3730a3; }
-        
-        /* Screen Management */
-        .screen { display: none; width: 100%; max-width: 600px; flex-direction: column; align-items: center; }
+        body { background-color: #f3f4f6; font-family: 'Inter', sans-serif; height: 100vh; overflow: hidden; margin: 0; display: flex; flex-direction: column; }
+        .screen { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: none; flex-direction: column; padding: 20px; overflow-y: auto; box-sizing: border-box; z-index: 1; }
         .screen.active { display: flex; }
         
-        /* Missing Alert */
-        .missing-bg { background-color: #fee2e2; color: #991b1b; height: 100vh; justify-content: center; width: 100%; position: absolute; top:0; left:0; z-index: 2000;}
-        .avatar-circle { width: 100px; height: 100px; background: #e9ecef; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 2.5rem; margin: 0 auto 15px; }
+        /* Footer Style */
+        .footer-credit { 
+            text-align: center; font-size: 0.7rem; color: #aaa; padding: 10px; 
+            position: fixed; bottom: 0; left: 0; width: 100%; background: rgba(255,255,255,0.8); z-index: 1000;
+        }
+
+        /* Home UI */
+        .header-text { text-align: center; color: #007bff; font-weight: 900; text-transform: uppercase; letter-spacing: 1px; margin: 20px 0; font-size: 1.5rem; }
+        .camera-box { background-color: #000; border-radius: 20px; width: 100%; aspect-ratio: 1/1; overflow: hidden; position: relative; margin-bottom: 20px; border: 4px solid #fff; box-shadow: 0 10px 30px rgba(0,0,0,0.1); display: flex; align-items: center; justify-content: center; }
+        #reader { width: 100%; height: 100%; object-fit: cover; }
+        #reader video { object-fit: cover; width: 100% !important; height: 100% !important; }
+        .input-group-custom { background: #fff; padding: 20px; border-radius: 20px; margin-bottom: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
+        .form-control, .form-select { border: 1px solid #e9ecef; border-radius: 10px; padding: 12px; font-weight: 600; background: #f8f9fa; }
+        .btn-scan { width: 100%; background-color: #007bff; color: white; border: none; padding: 18px; font-size: 1.1rem; font-weight: 700; border-radius: 15px; letter-spacing: 1px; margin-top: auto; z-index: 10; }
+        .btn-scan.stop { background-color: #dc3545; }
+
+        /* Action Buttons Styling */
+        .action-grid { display: grid; gap: 10px; margin-top: 15px; }
+        .btn-action-lg { width: 100%; padding: 15px; border-radius: 12px; font-weight: 700; font-size: 1.1rem; border: none; text-transform: uppercase; box-shadow: 0 4px 6px rgba(0,0,0,0.1); transition: 0.2s; }
+        .btn-action-lg:active { transform: scale(0.98); }
+        .btn-in { background: linear-gradient(135deg, #2ecc71, #27ae60); color: white; }
+        .btn-out { background: linear-gradient(135deg, #e74c3c, #c0392b); color: white; }
+        .btn-other { background: linear-gradient(135deg, #3498db, #2980b9); color: white; }
+
+        /* Other Screens */
+        #screen-missing { background-color: #ef4444; color: white; text-align: center; justify-content: center; }
+        .btn-dismiss { background: white; color: #ef4444; width: 100%; border-radius: 50px; padding: 15px; font-weight: 800; border: none; margin-top: auto; }
+        #screen-broadcast { background-color: #ffc107; color: #212529; text-align: center; justify-content: center; }
+        .broadcast-card { background: white; padding: 25px; border-radius: 20px; text-align: left; width: 100%; box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
+        .btn-ack { background: #212529; color: white; width: 100%; border-radius: 50px; padding: 15px; font-weight: 700; border: none; margin-top: auto; }
     </style>
 </head>
 <body>
 
     <div id="screen-home" class="screen active">
-        <h4 class="header-text">Keboree Scanner</h4>
+        <div class="header-text">KEBOREE 2K26</div>
+        <div class="camera-box"><div id="reader"></div><i class="bi bi-camera-fill display-1 text-muted" id="camIcon" style="position:absolute;"></i></div>
         
-        <div class="camera-wrapper">
-            <button class="btn-flash" id="btnFlash" onclick="toggleFlash()"><i class="bi bi-lightning-fill"></i></button>
-            <div id="reader"></div>
-            <i class="bi bi-camera-fill cam-placeholder" id="camIcon"></i>
+        <div class="input-group-custom">
+            <div class="mb-3"><label class="form-label fw-bold text-muted small">CAMERA</label><select id="cameraSelect" class="form-select"><option value="">Auto Detect</option></select></div>
+            <div class="mb-3"><label class="form-label fw-bold text-muted small">EVENT</label><select id="eventSelect" class="form-select"><option value="">Loading...</option></select></div>
+            <div><label class="form-label fw-bold text-muted small">MANUAL ID</label><input type="text" id="manualInput" class="form-control" placeholder="Enter ID"></div>
         </div>
 
-        <div class="controls-card">
-            <div class="mb-3">
-                <label class="form-label">Select Camera</label>
-                <select id="cameraSelect" class="form-select"><option value="">Auto Detect</option></select>
-            </div>
-            <div class="mb-3">
-                <label class="form-label">Event</label>
-                <select id="eventSelect" class="form-select"><option value="">Loading...</option></select>
-            </div>
-            <div>
-                <label class="form-label">Manual ID</label>
-                <input type="text" id="manualInput" class="form-control" placeholder="Enter ID">
-            </div>
-        </div>
-
-        <button id="scanBtn" class="btn-scan" onclick="handleScanToggle()">START SCANNER</button>
-        
-        <div class="mt-3">
-            <button onclick="logout()" class="btn btn-sm text-muted"><i class="bi bi-box-arrow-left"></i> Logout</button>
-            <button onclick="location.reload()" class="btn btn-sm text-muted"><i class="bi bi-arrow-clockwise"></i> Refresh</button>
-        </div>
+        <button id="scanBtn" class="btn-scan" onclick="handleScanToggle()">SCAN</button>
+        <div class="text-center mt-2 mb-5"><a href="#" onclick="logout()" class="text-muted small text-decoration-none">Logout</a></div>
     </div>
 
     <div id="screen-details" class="screen">
-        <div class="w-100 mb-4"><button class="btn border-0" onclick="goHome()"><i class="bi bi-arrow-left fs-3"></i></button></div>
-        <div class="text-center w-100">
-            <div class="avatar-circle" id="dAvatar">A</div>
-            <h2 class="fw-bold mb-0" id="dName">Name</h2>
-            <p class="text-muted"><span id="dID">ID</span> • <span id="dTroop">Troop</span></p>
+        <div class="d-flex align-items-center mb-3"><button class="btn border-0 bg-transparent fs-4" onclick="goHome()"><i class="bi bi-arrow-left"></i></button><h5 class="ms-2 mb-0 fw-bold">Scout Details</h5></div>
+        <div class="text-center mb-4">
+            <div class="bg-light rounded-circle d-flex align-items-center justify-content-center mx-auto border border-4 border-white shadow-sm" style="width:100px; height:100px; font-size:2.5rem; color:#6c757d;" id="dAvatar">A</div>
+            <h2 class="fw-bold mt-3 mb-0" id="dName">Name</h2>
+            <p class="text-muted mb-1"><span id="dID" class="fw-bold">ID</span></p>
+            <span class="badge bg-light text-dark border" id="dTroop">Troop</span>
         </div>
-        <div id="actionContainer" class="w-100 mt-3" style="max-width: 350px;"></div>
-        <button class="btn btn-link text-muted mt-4 fw-bold" onclick="goHome()">Cancel</button>
+        
+        <h6 class="text-muted small fw-bold mb-2 text-uppercase">Select Action</h6>
+        <div id="actionContainer" class="action-grid"></div>
+
+        <button class="btn btn-link text-muted mt-auto fw-bold mb-5" onclick="goHome()">Cancel</button>
     </div>
 
-    <div id="screen-missing" class="screen missing-bg">
-        <i class="bi bi-exclamation-octagon-fill display-1 mb-3 text-danger"></i>
-        <h1 class="fw-bold text-danger">MISSING SCOUT!</h1>
-        <div class="my-4 text-center">
-            <h2 class="fw-bold" id="mName">Name</h2>
-            <p class="fs-5" id="mDetails">Troop Details</p>
-        </div>
-        <button class="btn btn-light text-danger fw-bold rounded-pill px-5 py-3 shadow" onclick="goHome()">DISMISS ALERT</button>
+    <div id="screen-missing" class="screen">
+        <i class="bi bi-exclamation-triangle-fill display-1 mb-3"></i><h1 class="fw-bold">MISSING SCOUT<br>FOUND!</h1>
+        <div class="my-4"><div class="bg-white rounded-circle d-flex align-items-center justify-content-center mx-auto text-danger display-3 fw-bold" style="width:100px;height:100px;" id="mAvatar">A</div><h2 class="mt-3 fw-bold" id="mName">Name</h2><p class="opacity-75" id="mDetails">Details</p></div>
+        <button class="btn-dismiss mb-5" onclick="goHome()">Dismiss Alert</button>
     </div>
 
-    <div id="screen-broadcast" class="screen" style="background:#fff3cd; position:absolute; top:0; left:0; height:100%; justify-content:center; z-index:3000;">
-        <div class="card p-4 text-center shadow-lg border-0" style="max-width:350px;">
-            <i class="bi bi-megaphone-fill text-warning display-4 mb-3"></i>
-            <h4 class="fw-bold">ANNOUNCEMENT</h4>
-            <p class="lead my-3" id="broadcastMsg">...</p>
-            <small class="text-muted" id="broadcastTime">Just now</small>
-            <button class="btn btn-dark rounded-pill mt-4 fw-bold" onclick="goHome()">OK, GOT IT</button>
-        </div>
+    <div id="screen-broadcast" class="screen">
+        <div class="d-flex align-items-center justify-content-center mb-4"><i class="bi bi-megaphone-fill fs-1 me-2"></i><h4 class="fw-bold mb-0 text-uppercase">Broadcast</h4></div>
+        <div class="broadcast-card animate__animated animate__bounceIn"><h5 class="fw-bold mb-2">Message</h5><p id="broadcastMsg" class="lead">--</p><small class="text-muted" id="broadcastTime">Just now</small></div>
+        <button class="btn-ack mb-5" onclick="goHome()">Acknowledge</button>
     </div>
+
+    <div class="footer-credit">Design and developed by Madhawa Basnayake</div>
 
     <audio id="beep" src="data:audio/wav;base64,UklGRl9vT19XQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YU"></audio>
 
@@ -174,12 +118,9 @@
     const rtdb = getDatabase(app);
     const auth = getAuth(app);
 
-    let html5QrCode, selectedEvent, isCameraActive = false, currentScout = null, flashState = false;
+    let html5QrCode, selectedEvent, isCameraActive = false, currentScout = null;
 
-    onAuthStateChanged(auth, u => { 
-        if(!u) window.location.href="index.html"; 
-        else { loadEvents(); populateCameras(); listenBroadcast(); } 
-    });
+    onAuthStateChanged(auth, u => { if(!u) window.location.href="index.html"; else { loadEvents(); populateCameras(); listenBroadcast(); } });
 
     window.showScreen = id => { document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active')); document.getElementById(id).classList.add('active'); }
     window.goHome = () => { window.showScreen('screen-home'); if(isCameraActive) stopCamera(); }
@@ -206,7 +147,7 @@
     window.handleScanToggle = () => {
         let man = document.getElementById('manualInput').value.trim();
         if(man) { processScoutID(man); return; }
-        if(!selectedEvent) { Swal.fire({icon:'warning', title:'Select Event', text:'Please select an event first.', confirmButtonColor:'#007bff'}); return; }
+        if(!selectedEvent) { Swal.fire('Select Event', '', 'warning'); return; }
         if(isCameraActive) stopCamera(); else startCamera();
     }
 
@@ -214,39 +155,14 @@
         const camId = document.getElementById('cameraSelect').value;
         html5QrCode = new Html5Qrcode("reader");
         document.getElementById('camIcon').style.display = 'none';
-        
-        // Clean Box Config
-        const config = { fps: 15, qrbox: { width: 250, height: 250 } };
-        
-        html5QrCode.start(camId?{deviceId:{exact:camId}}:{facingMode:"environment"}, config, 
+        html5QrCode.start(camId?{deviceId:{exact:camId}}:{facingMode:"environment"}, {fps:15, qrbox:{width:250,height:250}}, 
         (txt)=>{ document.getElementById('beep').play().catch(()=>{}); if(navigator.vibrate)navigator.vibrate(200); stopCamera(); processScoutID(txt); }, 
         (err)=>{});
-        
-        isCameraActive=true; 
-        const btn = document.getElementById('scanBtn');
-        btn.innerText = "STOP CAMERA"; btn.classList.add('stop');
+        isCameraActive=true; document.getElementById('scanBtn').innerText="STOP CAMERA"; document.getElementById('scanBtn').classList.add('stop');
     }
 
     function stopCamera() {
-        if(html5QrCode) html5QrCode.stop().then(()=>{ 
-            html5QrCode.clear(); isCameraActive=false; 
-            document.getElementById('camIcon').style.display='block'; 
-            const btn = document.getElementById('scanBtn');
-            btn.innerText = "START SCANNER"; btn.classList.remove('stop'); 
-        }).catch(e=>{});
-    }
-
-    // Flash Logic
-    window.toggleFlash = function() {
-        if(html5QrCode && isCameraActive) {
-            flashState = !flashState;
-            html5QrCode.applyVideoConstraints({ advanced: [{ torch: flashState }] })
-            .then(() => {
-                const btn = document.getElementById('btnFlash');
-                if(flashState) btn.classList.add('active'); else btn.classList.remove('active');
-            })
-            .catch(() => Swal.fire({toast:true, icon:'info', title:'Flash not supported'}));
-        }
+        if(html5QrCode) html5QrCode.stop().then(()=>{ html5QrCode.clear(); isCameraActive=false; document.getElementById('camIcon').style.display='block'; document.getElementById('scanBtn').innerText="SCAN"; document.getElementById('scanBtn').classList.remove('stop'); }).catch(e=>{});
     }
 
     async function processScoutID(idText) {
@@ -263,6 +179,7 @@
             currentScout = snap.data();
 
             if(currentScout.isMissing) {
+                document.getElementById('mAvatar').innerText = currentScout.name.charAt(0);
                 document.getElementById('mName').innerText = currentScout.name;
                 document.getElementById('mDetails').innerText = currentScout.troop;
                 window.showScreen('screen-missing');
@@ -275,8 +192,11 @@
                 let con = document.getElementById('actionContainer'); con.innerHTML="";
                 let acts = selectedEvent.actions.length ? selectedEvent.actions : ['Mark Present'];
                 acts.forEach((a,i) => {
-                    let cls = a==='IN'?'btn-in':(a==='OUT'?'btn-out':'btn-other');
-                    con.innerHTML += `<button onclick="submitLog('${a}')" class="btn-action ${cls}">${a}</button>`;
+                    // Stylized Buttons
+                    let cls = 'btn-action-lg btn-other';
+                    if(a.toUpperCase().includes('IN')) cls = 'btn-action-lg btn-in';
+                    if(a.toUpperCase().includes('OUT')) cls = 'btn-action-lg btn-out';
+                    con.innerHTML += `<button onclick="submitLog('${a}')" class="${cls}">${a}</button>`;
                 });
                 window.showScreen('screen-details');
             }
@@ -286,20 +206,18 @@
     window.submitLog = (action) => {
         Swal.showLoading();
         push(ref(rtdb, 'logs'), {
-            scoutID: currentScout.id, scoutName: currentScout.name,
-            eventID: selectedEvent.id, eventName: selectedEvent.name,
-            action: action, scannedBy: auth.currentUser.email, timestamp: serverTimestamp()
+            scoutID: currentScout.id, 
+            scoutName: currentScout.name, // Sending Name
+            scoutTroop: currentScout.troop, // Sending Troop
+            scoutDistrict: currentScout.district || '', // Sending District
+            eventID: selectedEvent.id, 
+            eventName: selectedEvent.name,
+            action: action, 
+            scannedBy: auth.currentUser.email, 
+            timestamp: serverTimestamp()
         }).then(() => {
-            Swal.close();
-            Swal.fire({icon:'success', title:'Saved', timer:1000, showConfirmButton:false});
-            document.getElementById('manualInput').value="";
-            
-            // If scout was missing, send found alert
-            if(currentScout.isMissing) {
-                push(ref(rtdb, 'system/alerts'), { scoutName: currentScout.name, scanner: auth.currentUser.email, timestamp: serverTimestamp() });
-            }
-            
-            goHome();
+            Swal.close(); Swal.fire({icon:'success', title:'Saved', timer:1000, showConfirmButton:false});
+            document.getElementById('manualInput').value=""; goHome();
         }).catch(e => Swal.fire('Error', e.message, 'error'));
     }
 
@@ -319,11 +237,10 @@
 
     window.logout = () => signOut(auth).then(()=>window.location.href="index.html");
     
-    // Global
+    // Global Access
     window.handleScanToggle = handleScanToggle;
     window.goHome = goHome;
     window.submitLog = submitLog;
-    window.toggleFlash = toggleFlash;
 </script>
 </body>
 </html>
