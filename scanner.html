@@ -3,92 +3,72 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Keboree Scanner</title>
-    
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <title>Scanner</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
-    
     <style>
-        body { background-color: #f3f4f6; font-family: 'Inter', sans-serif; height: 100vh; overflow: hidden; margin: 0; display: flex; flex-direction: column; }
-        .screen { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: none; flex-direction: column; padding: 20px; overflow-y: auto; box-sizing: border-box; z-index: 1; }
-        .screen.active { display: flex; }
+        body { background: #000; height: 100vh; overflow: hidden; display: flex; flex-direction: column; font-family: sans-serif; }
+        #reader { width: 100%; height: 100%; object-fit: cover; position: absolute; }
+        .ui { position: absolute; width: 100%; height: 100%; z-index: 10; display: flex; flex-direction: column; justify-content: space-between; padding: 20px; pointer-events: none; }
+        .pointer { pointer-events: auto; }
         
-        .header-text { text-align: center; color: #007bff; font-weight: 900; text-transform: uppercase; letter-spacing: 1px; margin: 20px 0; font-size: 1.5rem; }
-        .camera-box { background-color: #000; border-radius: 20px; width: 100%; aspect-ratio: 1/1; overflow: hidden; position: relative; margin-bottom: 20px; border: 4px solid #fff; box-shadow: 0 10px 30px rgba(0,0,0,0.1); display: flex; align-items: center; justify-content: center; }
-        #reader { width: 100%; height: 100%; object-fit: cover; }
-        #reader video { object-fit: cover; width: 100% !important; height: 100% !important; }
-        
-        .input-group-custom { background: #fff; padding: 20px; border-radius: 20px; margin-bottom: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
-        .form-label { font-size: 0.8rem; font-weight: 700; color: #6c757d; margin-bottom: 5px; }
-        .form-control, .form-select { border: 1px solid #e9ecef; border-radius: 10px; padding: 12px; font-weight: 600; background: #f8f9fa; }
-        
-        .btn-scan { width: 100%; background-color: #007bff; color: white; border: none; padding: 18px; font-size: 1.1rem; font-weight: 700; border-radius: 15px; letter-spacing: 1px; margin-top: auto; z-index: 10; transition: 0.3s; }
-        .btn-scan.stop { background-color: #dc3545; }
+        .glass { background: rgba(255,255,255,0.1); backdrop-filter: blur(10px); border-radius: 15px; padding: 10px; border: 1px solid rgba(255,255,255,0.2); margin-bottom: 10px; display: flex; align-items: center; }
+        select, input { background: transparent; border: none; color: white; width: 100%; outline: none; font-weight: bold; }
+        option { background: #000; }
 
-        .btn-action-lg { width: 100%; padding: 15px; border-radius: 12px; font-weight: 700; font-size: 1.1rem; border: none; text-transform: uppercase; box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin-bottom: 10px; }
-        .btn-in { background: linear-gradient(135deg, #2ecc71, #27ae60); color: white; }
-        .btn-out { background: linear-gradient(135deg, #e74c3c, #c0392b); color: white; }
-        .btn-other { background: linear-gradient(135deg, #3498db, #2980b9); color: white; }
-
-        #screen-broadcast { background-color: #ffc107; color: #212529; text-align: center; justify-content: center; z-index: 2000; }
-        .broadcast-card { background: white; padding: 25px; border-radius: 20px; text-align: left; width: 100%; box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
+        .scan-area { flex-grow: 1; display: flex; align-items: center; justify-content: center; position: relative; }
+        .frame { width: 260px; height: 260px; border: 2px solid rgba(255,255,255,0.5); border-radius: 20px; position: relative; box-shadow: 0 0 0 100vmax rgba(0,0,0,0.6); }
         
-        .footer-credit { text-align: center; font-size: 0.7rem; color: #aaa; padding: 10px; position: fixed; bottom: 0; left: 0; width: 100%; background: rgba(255,255,255,0.9); z-index: 1000; border-top: 1px solid #eee; }
+        .btn-scan { width: 80px; height: 80px; background: #0d6efd; border-radius: 50%; border: 4px solid rgba(255,255,255,0.3); color: white; font-size: 2rem; display: flex; align-items: center; justify-content: center; }
+        .btn-scan.stop { background: #dc3545; }
+        .btn-sm-c { width: 50px; height: 50px; background: rgba(255,255,255,0.2); border-radius: 50%; border: none; color: white; font-size: 1.2rem; }
+        
+        #locked { position: absolute; width: 100%; height: 100%; background: #ef4444; z-index: 2000; display: none; flex-direction: column; justify-content: center; align-items: center; color: white; text-align: center; }
+        #broadcast { position: absolute; width: 100%; height: 100%; background: #ffc107; z-index: 1500; display: none; flex-direction: column; justify-content: center; align-items: center; color: #000; padding: 20px; text-align: center; }
+        
+        .swal2-popup { background: #222 !important; color: #fff !important; border-radius: 20px !important; }
+        .btn-act { width: 100%; padding: 15px; margin: 5px 0; border-radius: 10px; border: none; font-weight: bold; text-transform: uppercase; }
+        .c-in { background: #10b981; color: white; } .c-out { background: #ef4444; color: white; } .c-other { background: #3b82f6; color: white; }
     </style>
 </head>
 <body>
 
-    <div id="screen-home" class="screen active">
-        <div class="header-text">KEBOREE 2K26</div>
-        <div class="camera-box"><div id="reader"></div><i class="bi bi-camera-fill display-1 text-muted" id="camIcon" style="position:absolute;"></i></div>
-        <div class="input-group-custom">
-            <div class="mb-3"><label class="form-label">CAMERA</label><select id="cameraSelect" class="form-select"><option value="">Auto Detect</option></select></div>
-            <div class="mb-3"><label class="form-label">EVENT</label><select id="eventSelect" class="form-select"><option value="">Loading...</option></select></div>
-            <div><label class="form-label">MANUAL ID</label><input type="text" id="manualInput" class="form-control" placeholder="Enter ID"></div>
-        </div>
-        <button id="scanBtn" class="btn-scan" onclick="handleScanToggle()">SCAN</button>
-        <div class="text-center mt-2 mb-5"><a href="#" onclick="logout()" class="text-muted small text-decoration-none">Logout</a></div>
+<div id="locked"><i class="bi bi-lock-fill display-1"></i><h2 class="fw-bold mt-3">SYSTEM LOCKED</h2></div>
+<div id="broadcast"><i class="bi bi-megaphone-fill display-1"></i><h3 class="fw-bold mt-3">ANNOUNCEMENT</h3><p class="lead fw-bold" id="bMsg">...</p><button class="btn btn-dark rounded-pill px-5 mt-4" onclick="hideBroadcast()">OK</button></div>
+
+<div id="reader"></div>
+
+<div class="ui">
+    <div class="pointer">
+        <div class="glass"><i class="bi bi-camera-video me-2 text-muted"></i><select id="camSelect"><option>Auto</option></select></div>
+        <div class="glass"><i class="bi bi-calendar-event me-2 text-primary"></i><select id="evtSelect"><option>Loading...</option></select></div>
+        <div class="glass"><i class="bi bi-keyboard me-2 text-success"></i><input id="manId" placeholder="Enter ID"><button onclick="manual()" class="btn btn-sm text-success fw-bold">GO</button></div>
     </div>
 
-    <div id="screen-details" class="screen">
-        <div class="d-flex align-items-center mb-3"><button class="btn border-0 bg-transparent fs-4" onclick="goHome()"><i class="bi bi-arrow-left"></i></button><h5 class="ms-2 mb-0 fw-bold">Scout Details</h5></div>
-        <div class="text-center mb-4">
-            <div class="bg-light rounded-circle d-flex align-items-center justify-content-center mx-auto border border-4 border-white shadow-sm" style="width:100px; height:100px; font-size:2.5rem; color:#6c757d;" id="dAvatar">A</div>
-            <h2 class="fw-bold mt-3 mb-0" id="dName">Name</h2>
-            <p class="text-muted mb-1"><span id="dID" class="fw-bold">ID</span></p>
-            <span class="badge bg-light text-dark border" id="dTroop">Troop</span>
-        </div>
-        <div id="actionContainer"></div>
-        <button class="btn btn-link text-muted mt-auto fw-bold mb-5" onclick="goHome()">Cancel</button>
+    <div class="scan-area">
+        <div class="frame" id="frame"></div>
+        <div id="stat" style="position:absolute; top:65%; color:#aaa; font-size:0.8rem;">READY</div>
     </div>
 
-    <div id="screen-missing" class="screen" style="background:#ef4444; color:white; justify-content:center; text-align:center;">
-        <i class="bi bi-exclamation-triangle-fill display-1 mb-3"></i><h1 class="fw-bold">MISSING SCOUT!</h1>
-        <div class="my-4"><div class="bg-white rounded-circle d-flex align-items-center justify-content-center mx-auto text-danger display-3 fw-bold" style="width:100px;height:100px;" id="mAvatar">A</div><h2 class="mt-3 fw-bold" id="mName">Name</h2><p class="opacity-75" id="mDetails">Details</p></div>
-        <button class="btn btn-light text-danger fw-bold rounded-pill px-5 py-3" onclick="goHome()">DISMISS</button>
+    <div class="d-flex justify-content-center gap-4 align-items-center pointer pb-4">
+        <button class="btn-sm-c" onclick="flash()"><i class="bi bi-lightning-fill"></i></button>
+        <button class="btn-scan" id="btnScan" onclick="toggle()"><i class="bi bi-qr-code-scan"></i></button>
+        <button class="btn-sm-c bg-danger" onclick="logout()"><i class="bi bi-power"></i></button>
     </div>
+</div>
 
-    <div id="screen-broadcast" class="screen">
-        <div class="d-flex align-items-center justify-content-center mb-4"><i class="bi bi-megaphone-fill fs-1 me-2"></i><h4 class="fw-bold mb-0 text-uppercase">Broadcast</h4></div>
-        <div class="broadcast-card animate__animated animate__bounceIn"><h5 class="fw-bold mb-2">Message</h5><p id="broadcastMsg" class="lead">--</p><small class="text-muted" id="broadcastTime">Just now</small></div>
-        <button class="btn btn-dark rounded-pill w-100 py-3 mt-auto mb-5 fw-bold" onclick="goHome()">Acknowledge</button>
-    </div>
-
-    <div class="footer-credit">Design and developed by Madhawa Basnayake</div>
-    <audio id="beep" src="data:audio/wav;base64,UklGRl9vT19XQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YU"></audio>
+<audio id="beep" src="data:audio/wav;base64,UklGRl9vT19XQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YU"></audio>
 
 <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-    import { getFirestore, collection, doc, getDoc, onSnapshot, serverTimestamp, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-    import { getDatabase, ref, push, set, onValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+    import { getFirestore, collection, doc, getDoc, onSnapshot, query, where, getDocs, updateDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+    import { getDatabase, ref, push, onValue, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
     import { getAuth, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
-    // 🔴 CONFIG
+    // 🔴 YOUR CONFIG
     const firebaseConfig = {
         apiKey: "AIzaSyBsBsKnXv6FgYVk7OLo0XagFSBZgYajuNA",
         authDomain: "qr-system-02---web-based.firebaseapp.com",
@@ -104,137 +84,130 @@
     const rtdb = getDatabase(app);
     const auth = getAuth(app);
 
-    let html5QrCode, selectedEvent, isCameraActive = false, currentScout = null, isSystemLocked = false;
+    let html5QrCode, selectedEvent, isScanning=false, isLocked=false, currentScout=null;
 
-    onAuthStateChanged(auth, u => { 
-        if(!u) window.location.href="index.html"; 
-        else { 
-            loadEvents(); populateCameras(); 
-            listenBroadcast(); 
-            // Lock Listener
+    onAuthStateChanged(auth, u => {
+        if(!u) window.location.href="index.html";
+        else {
+            loadEvents(); initCam();
             onValue(ref(rtdb, 'system/status/locked'), s => {
-                isSystemLocked = s.val() || false;
-                if(isSystemLocked) { Swal.fire({icon:'error', title:'SYSTEM LOCKED', text:'Admin paused scanning.', allowOutsideClick:false, showConfirmButton:false}); if(isCameraActive) stopCamera(); }
-                else { Swal.close(); }
+                isLocked = s.val() || false;
+                document.getElementById('locked').style.display = isLocked ? 'flex' : 'none';
+                if(isLocked && isScanning) stop();
             });
-        } 
+            onValue(ref(rtdb, 'system/broadcast'), s => {
+                let d = s.val();
+                if(d && d.message) {
+                    let diff = (Date.now() - d.timestamp)/1000/60;
+                    if(diff < 2) {
+                        document.getElementById('bMsg').innerText = d.message;
+                        document.getElementById('broadcast').style.display = 'flex';
+                        document.getElementById('beep').play().catch(()=>{});
+                    }
+                }
+            });
+        }
     });
 
-    window.showScreen = id => { document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active')); document.getElementById(id).classList.add('active'); }
-    window.goHome = () => { window.showScreen('screen-home'); if(isCameraActive) stopCamera(); }
-
     function loadEvents() {
-        onSnapshot(collection(db, "events"), snap => {
-            const sel = document.getElementById('eventSelect'); sel.innerHTML='<option value="">Select Event</option>';
-            snap.forEach(d => { if(d.data().active) {
-                let opt=document.createElement('option'); opt.value=d.id; opt.text=d.data().name; opt.dataset.actions=JSON.stringify(d.data().actions||[]); sel.appendChild(opt);
-            }});
+        onSnapshot(collection(db,"events"), s=>{
+            let h='<option value="">Select Event</option>';
+            s.forEach(d=>{ if(d.data().active) h+=`<option value="${d.id}" data-acts='${JSON.stringify(d.data().actions)}'>${d.data().name}</option>` });
+            document.getElementById('evtSelect').innerHTML=h;
         });
-        document.getElementById('eventSelect').addEventListener('change', e => {
-            let opt = e.target.options[e.target.selectedIndex];
-            selectedEvent = e.target.value ? {id:e.target.value, name:opt.text, actions:JSON.parse(opt.dataset.actions)} : null;
+        document.getElementById('evtSelect').addEventListener('change', e=>{
+            let o=e.target.options[e.target.selectedIndex];
+            selectedEvent=e.target.value?{id:e.target.value,name:o.text,actions:JSON.parse(o.dataset.acts)}:null;
         });
     }
 
-    async function populateCameras() {
-        try { const devs = await Html5Qrcode.getCameras(); const sel = document.getElementById('cameraSelect'); sel.innerHTML="";
-        if(devs.length){ devs.forEach(d=>{let o=document.createElement('option');o.value=d.id;o.text=d.label;sel.appendChild(o)}); sel.value=devs[devs.length-1].id; }
-        } catch(e){}
+    async function initCam() {
+        try { const d=await Html5Qrcode.getCameras(); let h=""; d.forEach(x=>h+=`<option value="${x.id}">${x.label}</option>`); 
+        document.getElementById('camSelect').innerHTML=h; document.getElementById('camSelect').value=d[d.length-1].id; } catch(e){}
     }
 
-    window.handleScanToggle = () => {
-        if(isSystemLocked) return;
-        let man = document.getElementById('manualInput').value.trim();
-        if(man) { processScoutID(man); return; }
-        if(!selectedEvent) { Swal.fire('Select Event', '', 'warning'); return; }
-        if(isCameraActive) stopCamera(); else startCamera();
+    window.toggle = () => {
+        if(!selectedEvent) { Swal.fire({icon:'warning', title:'Select Event', toast:true, position:'top'}); return; }
+        if(isScanning) stop(); else start();
     }
 
-    function startCamera() {
-        const camId = document.getElementById('cameraSelect').value;
+    function start() {
+        let id = document.getElementById('camSelect').value;
         html5QrCode = new Html5Qrcode("reader");
-        document.getElementById('camIcon').style.display = 'none';
-        html5QrCode.start(camId?{deviceId:{exact:camId}}:{facingMode:"environment"}, {fps:15, qrbox:{width:250,height:250}}, 
-        (txt)=>{ document.getElementById('beep').play().catch(()=>{}); if(navigator.vibrate)navigator.vibrate(200); stopCamera(); processScoutID(txt); }, 
-        (err)=>{});
-        isCameraActive=true; document.getElementById('scanBtn').innerText="STOP CAMERA"; document.getElementById('scanBtn').classList.add('stop');
+        html5QrCode.start(id, {fps:15, qrbox:{width:250,height:250}}, onScan, ()=>{});
+        isScanning=true; 
+        document.getElementById('scanBtn').classList.add('stop');
+        document.getElementById('scanBtn').innerHTML='<i class="bi bi-stop-fill"></i>';
+        document.getElementById('stat').style.display='none';
     }
 
-    function stopCamera() {
-        if(html5QrCode) html5QrCode.stop().then(()=>{ html5QrCode.clear(); isCameraActive=false; document.getElementById('camIcon').style.display='block'; document.getElementById('scanBtn').innerText="SCAN"; document.getElementById('scanBtn').classList.remove('stop'); }).catch(e=>{});
+    function stop() {
+        if(html5QrCode) html5QrCode.stop().then(()=>{ html5QrCode.clear(); isScanning=false; 
+            document.getElementById('scanBtn').classList.remove('stop');
+            document.getElementById('scanBtn').innerHTML='<i class="bi bi-qr-code-scan"></i>';
+            document.getElementById('stat').style.display='block';
+        }).catch(()=>{});
     }
 
-    async function processScoutID(idText) {
+    window.manual = () => onScan(document.getElementById('manId').value);
+
+    async function onScan(txt) {
+        if(!txt) return;
+        stop(); document.getElementById('beep').play().catch(()=>{}); navigator.vibrate(200);
         Swal.showLoading();
+        
         try {
-            let docID = idText.replace('/','_');
-            let snap = await getDoc(doc(db,"scouts",docID));
+            let did = txt.replace('/','_');
+            let snap = await getDoc(doc(db,"scouts",did));
             if(!snap.exists()) {
-                let q = await getDocs(query(collection(db,"scouts"), where("id","==",idText)));
-                if(q.empty) throw new Error("ID Not Found");
+                let q = await getDocs(query(collection(db,"scouts"), where("id","==",txt)));
+                if(q.empty) throw new Error("Not Found");
                 snap = q.docs[0];
             }
-            Swal.close();
             currentScout = snap.data();
-
-            if(currentScout.isMissing) {
-                document.getElementById('mName').innerText = currentScout.name;
-                document.getElementById('mDetails').innerText = currentScout.troop;
-                window.showScreen('screen-missing');
-            } else {
-                document.getElementById('dName').innerText = currentScout.name;
-                document.getElementById('dID').innerText = currentScout.id;
-                document.getElementById('dTroop').innerText = currentScout.troop;
-                document.getElementById('dAvatar').innerText = currentScout.name.charAt(0);
-                
-                let con = document.getElementById('actionContainer'); con.innerHTML="";
-                let acts = selectedEvent.actions.length ? selectedEvent.actions : ['Mark Present'];
-                acts.forEach((a,i) => {
-                    let cls = 'btn-action-lg btn-other';
-                    if(a.toUpperCase().includes('IN')) cls = 'btn-action-lg btn-in';
-                    if(a.toUpperCase().includes('OUT')) cls = 'btn-action-lg btn-out';
-                    con.innerHTML += `<button onclick="submitLog('${a}')" class="${cls}"><i class="bi bi-check-circle-fill"></i> ${a}</button>`;
-                });
-                window.showScreen('screen-details');
-            }
-        } catch(e) { Swal.fire('Error', e.message, 'error'); }
+            showModal();
+        } catch(e) { Swal.fire('Error', 'Invalid ID', 'error'); }
     }
 
-    window.submitLog = (action) => {
-        if(isSystemLocked) return;
-        Swal.showLoading();
-        push(ref(rtdb, 'logs'), {
-            scoutID: currentScout.id, scoutName: currentScout.name, scoutTroop: currentScout.troop, scoutDistrict: currentScout.district || '',
-            eventID: selectedEvent.id, eventName: selectedEvent.name,
-            action: action, scannedBy: auth.currentUser.email, timestamp: Date.now()
-        }).then(() => {
-            if(currentScout.isMissing) {
-                push(ref(rtdb, 'system/alerts'), { scoutName: currentScout.name, scanner: auth.currentUser.email, timestamp: Date.now() });
-            }
-            Swal.close(); Swal.fire({icon:'success', title:'Saved', timer:1000, showConfirmButton:false});
-            document.getElementById('manualInput').value=""; goHome();
-        }).catch(e => Swal.fire('Error', e.message, 'error'));
-    }
+    function showModal() {
+        let s = currentScout;
+        let btns = "";
+        if(selectedEvent.actions.length) selectedEvent.actions.forEach(a => {
+            let c = a.includes('IN')?'c-in':(a.includes('OUT')?'c-out':'c-other');
+            btns += `<button onclick="window.log('${a}')" class="btn-act ${c}">${a}</button>`;
+        }); else btns = `<button onclick="window.log('Present')" class="btn-act c-other">Mark</button>`;
+        
+        let alert = s.isMissing ? `<div class="bg-danger p-2 rounded mb-2 text-center fw-bold">⚠️ MISSING SCOUT</div>` : '';
 
-    // 🔥 BROADCAST 20 SECONDS FIX
-    function listenBroadcast() {
-        onValue(ref(rtdb, 'system/broadcast'), s => {
-            let d = s.val();
-            if(d && d.message) {
-                let diffSeconds = (Date.now() - d.timestamp) / 1000;
-                // Show only if message is less than 20 seconds old
-                if(diffSeconds < 20) {
-                    document.getElementById('broadcastMsg').innerText = d.message;
-                    document.getElementById('broadcastTime').innerText = "Sent: Just now";
-                    document.getElementById('beep').play().catch(()=>{});
-                    window.showScreen('screen-broadcast');
-                }
-            }
+        Swal.fire({
+            title: s.name,
+            html: `${alert}<p style="color:#aaa">${s.id} • ${s.troop}</p>${btns}`,
+            showConfirmButton: false, showCancelButton: true, cancelButtonText: 'Cancel',
+            background: '#222', color: '#fff'
         });
     }
 
-    window.logout = () => signOut(auth).then(()=>window.location.href="index.html");
-    window.handleScanToggle = handleScanToggle; window.goHome = goHome; window.submitLog = submitLog;
+    window.log = (act) => {
+        Swal.showLoading();
+        push(ref(rtdb, 'logs'), {
+            scoutID: currentScout.id, scoutName: currentScout.name, scoutTroop: currentScout.troop, scoutDistrict: currentScout.district||'',
+            eventID: selectedEvent.id, eventName: selectedEvent.name,
+            action: act, scannedBy: auth.currentUser.email,
+            timestamp: Date.now()
+        }).then(() => {
+            if(currentScout.isMissing) {
+                push(ref(rtdb, 'system/alerts'), { scoutName:currentScout.name, scanner:auth.currentUser.email, timestamp:Date.now() });
+                updateDoc(doc(db, "scouts", currentScout.docId), { isMissing: false });
+            }
+            Swal.close();
+            Swal.fire({icon:'success', title:'Saved', toast:true, position:'top', timer:1000, showConfirmButton:false});
+            document.getElementById('manId').value=""; start();
+        });
+    }
+
+    window.hideBroadcast = () => document.getElementById('broadcast').style.display = 'none';
+    window.logout = () => signOut(auth).then(()=>location.href='index.html');
+    window.manual = manual; window.log = log; window.toggle = toggle; window.hideBroadcast = hideBroadcast;
 </script>
 </body>
 </html>
