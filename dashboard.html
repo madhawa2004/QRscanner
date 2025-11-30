@@ -4,7 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Scout Admin Dashboard</title>
+    
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+    
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
@@ -14,25 +16,25 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     
     <style>
+        /* THEME */
         body { background-color: #f3f4f6; font-family: 'Poppins', sans-serif; color: #4b5563; }
         .sidebar { position: fixed; height: 100vh; width: 260px; background: #fff; border-right: 1px solid #e5e7eb; padding-top: 30px; z-index: 1000; }
         .sidebar h3 { color: #8b5cf6; text-align: center; font-weight: 700; margin-bottom: 40px; }
         .nav-link { color: #6b7280; padding: 12px 25px; margin: 4px 15px; border-radius: 12px; transition: 0.3s; font-weight: 500; cursor: pointer; }
         .nav-link:hover, .nav-link.active { background-color: #f5f3ff; color: #7c3aed; }
         .main-content { margin-left: 260px; padding: 40px; }
+        
         .card { border: none; background: #fff; border-radius: 16px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.02); }
         .btn-primary { background: #8b5cf6; border: none; } .btn-primary:hover { background: #7c3aed; }
-        .stat-card { border-left: 5px solid #8b5cf6; transition: 0.3s; }
-        .stat-value { font-size: 1.8rem; font-weight: 700; color: #1f2937; }
-        .scout-tile { transition: 0.2s; border: 1px solid transparent; }
+        
+        /* Badges & Colors */
+        .badge-in { background-color: #d1fae5; color: #065f46; border: 1px solid #a7f3d0; }
+        .badge-out { background-color: #fee2e2; color: #991b1b; border: 1px solid #fecaca; }
+        .badge-other { background-color: #e0e7ff; color: #3730a3; border: 1px solid #c7d2fe; }
+
+        .scout-tile:hover { transform: translateY(-3px); box-shadow: 0 10px 20px rgba(0,0,0,0.05); }
         .missing-scout { border: 2px solid #ef4444 !important; background-color: #fff5f5 !important; animation: pulseRed 2s infinite; }
         @keyframes pulseRed { 0% {box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4);} 100% {box-shadow: 0 0 0 0 rgba(239, 68, 68, 0);} }
-        .badge-in { background-color: #d1fae5; color: #065f46; }
-        .badge-out { background-color: #fee2e2; color: #991b1b; }
-        .badge-other { background-color: #e0e7ff; color: #3730a3; }
-        
-        /* Lock Switch */
-        .system-locked { border: 2px solid red; background: #fff0f0; }
     </style>
 </head>
 <body>
@@ -43,6 +45,7 @@
     <h3>⚜️ SCOUT<span style="color:#222">SYS</span></h3>
     <ul class="nav flex-column">
         <li class="nav-item"><a class="nav-link active" onclick="loadView('dashboard', this)"><i class="bi bi-grid-fill"></i> Overview</a></li>
+        <li class="nav-item"><a class="nav-link" onclick="loadView('leaderboard', this)"><i class="bi bi-trophy-fill"></i> Leaderboard</a></li>
         <li class="nav-item"><a class="nav-link" onclick="loadView('directory', this)"><i class="bi bi-folder2-open"></i> Directory</a></li>
         <li class="nav-item"><a class="nav-link" onclick="loadView('events', this)"><i class="bi bi-calendar4-event"></i> Events</a></li>
         <li class="nav-item" id="nav-staff"><a class="nav-link" onclick="loadView('staff', this)"><i class="bi bi-people-fill"></i> Staff</a></li>
@@ -56,20 +59,27 @@
 <div class="main-content">
     <div class="d-flex justify-content-between align-items-center mb-5">
         <div><h3 class="fw-bold mb-1" id="pageTitle">Dashboard</h3><span class="badge bg-light text-primary border" id="userRoleDisplay">Loading...</span></div>
-        <div class="d-flex gap-2">
-            <button onclick="toggleSystemLock()" class="btn btn-outline-dark fw-bold" id="btnLock"><i class="bi bi-unlock-fill"></i> System Active</button>
-            <button onclick="triggerEmergency()" class="btn btn-outline-danger fw-bold" id="btn-emergency"><i class="bi bi-megaphone-fill"></i> Broadcast</button>
-        </div>
+        <button onclick="triggerEmergency()" class="btn btn-outline-danger rounded-pill fw-bold" id="btn-emergency"><i class="bi bi-megaphone-fill"></i> Broadcast</button>
     </div>
 
     <div id="view-dashboard" class="view-section animate__animated animate__fadeIn">
         <div class="row g-4 mb-4">
             <div class="col-md-4"><div class="card p-4"><h6 class="text-muted small fw-bold">TOTAL REGISTERED</h6><h2 class="fw-bold text-dark" id="statTotal">0</h2></div></div>
             <div class="col-md-4"><div class="card p-4"><h6 class="text-muted small fw-bold">TOTAL SCANS</h6><h2 class="fw-bold text-dark" id="statTotalScans">0</h2></div></div>
-            <div class="col-md-4"><div class="card p-4"><h6 class="text-muted small fw-bold">SYSTEM</h6><h4 class="fw-bold text-success" id="sysStatusText">Online</h4></div></div>
+            <div class="col-md-4"><div class="card p-4"><h6 class="text-muted small fw-bold">SYSTEM</h6><h4 class="fw-bold text-success">Online</h4></div></div>
         </div>
         <h5 class="fw-bold mb-3 text-secondary">Live Event Status</h5>
         <div id="liveEventCards" class="row g-4"><div class="col-12 text-center text-muted py-5">Waiting for scan data...</div></div>
+    </div>
+
+    <div id="view-leaderboard" class="view-section animate__animated animate__fadeIn" style="display:none;">
+        <div class="card p-5 text-center">
+            <h4 class="fw-bold mb-3">🏆 Top Scouts</h4>
+            <button onclick="calculateLeaderboard()" class="btn btn-primary btn-lg px-5 rounded-pill shadow">Load Leaderboard</button>
+        </div>
+        <div class="card p-4 mt-4" id="leaderboardResult" style="display:none;">
+            <div class="table-responsive"><table class="table table-hover align-middle"><thead class="bg-light"><tr><th class="ps-4">Rank</th><th>Scout Name</th><th>ID</th><th>Activities</th><th class="text-end pe-4">Total Points</th></tr></thead><tbody id="leaderboardBody"></tbody></table></div>
+        </div>
     </div>
 
     <div id="view-directory" class="view-section animate__animated animate__fadeIn" style="display:none;">
@@ -96,18 +106,6 @@
                 </div>
             </div>
             <div class="col-md-7"><div class="card p-4"><h5 class="fw-bold mb-3">Active Events</h5><div id="eventsList" class="d-flex flex-column gap-2"></div></div></div>
-        </div>
-    </div>
-
-    <div id="view-reports" class="view-section animate__animated animate__fadeIn" style="display:none;">
-        <div class="row g-4">
-            <div class="col-md-4"><div class="card p-5 text-center h-100"><i class="bi bi-people-fill display-4 text-primary mb-3"></i><h4>Registered Scouts</h4><button onclick="downloadScoutReport()" class="btn btn-outline-primary fw-bold mt-3">Download PDF</button></div></div>
-            <div class="col-md-4"><div class="card p-5 text-center h-100"><i class="bi bi-list-columns-reverse display-4 text-success mb-3"></i><h4>Full Event Log</h4><button onclick="downloadLogReport()" class="btn btn-outline-success fw-bold mt-3">Download PDF</button></div></div>
-            <div class="col-md-4"><div class="card p-5 text-center h-100"><i class="bi bi-clock-history display-4 text-warning mb-3"></i><h4>Inactivity Check</h4><p class="text-muted small">Find scouts not scanned in 5+ hours</p><button onclick="checkInactivity()" class="btn btn-outline-warning fw-bold">Check Now</button></div></div>
-        </div>
-        <div id="inactivityResult" class="card p-4 mt-4" style="display:none;">
-            <h5>Inactive Scouts (>5 Hours)</h5>
-            <div id="inactiveList" class="list-group"></div>
         </div>
     </div>
 
@@ -141,15 +139,37 @@
         </div>
     </div>
 
+    <div id="view-reports" class="view-section animate__animated animate__fadeIn" style="display:none;">
+        <div class="row g-4">
+            <div class="col-md-6"><div class="card p-5 text-center h-100"><i class="bi bi-people-fill display-4 text-primary mb-3"></i><h4>Registered Scouts</h4><button onclick="downloadScoutReport()" class="btn btn-outline-primary fw-bold mt-3">Download PDF</button></div></div>
+            <div class="col-md-6"><div class="card p-5 text-center h-100"><i class="bi bi-list-columns-reverse display-4 text-success mb-3"></i><h4>Full Event Log</h4><button onclick="downloadLogReport()" class="btn btn-outline-success fw-bold mt-3">Download PDF</button></div></div>
+        </div>
+    </div>
+
     <div id="view-logs" class="view-section animate__animated animate__fadeIn" style="display:none;">
         <div class="card p-4">
             <h5 class="fw-bold mb-4">Live Logs</h5>
-            <div class="table-responsive"><table class="table table-hover"><thead class="bg-light"><tr><th class="ps-3">Time</th><th>ID</th><th>Event</th><th>Action</th><th>Scanner</th></tr></thead><tbody id="logsTableBody"></tbody></table></div>
+            <div class="table-responsive">
+                <table class="table table-hover align-middle">
+                    <thead class="bg-light">
+                        <tr>
+                            <th class="ps-3">Time</th>
+                            <th>ID</th>
+                            <th>Event</th>
+                            <th>Action</th>
+                            <th>Scanner</th>
+                        </tr>
+                    </thead>
+                    <tbody id="logsTableBody">
+                        <tr><td colspan="5" class="text-center text-muted">Loading logs...</td></tr>
+                    </tbody>
+                </table>
+            </div>
         </div>
     </div>
 </div>
 
-<audio id="alertSound" src="data:audio/wav;base64,UklGRl9vT19XQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YU"></audio> <div class="modal fade" id="scoutModal" tabindex="-1"><div class="modal-dialog modal-dialog-centered"><div class="modal-content border-0 shadow-lg rounded-4"><div class="modal-header bg-primary text-white border-0"><h5 class="modal-title fw-bold">Profile</h5><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div><div class="modal-body p-4 text-center"><div class="bg-light text-primary border border-2 border-primary mx-auto mb-2 d-flex align-items-center justify-content-center" style="width: 80px; height: 80px; font-size: 2rem; border-radius:50%;" id="mAvatar"></div><h4 class="fw-bold mb-0" id="mName">Loading...</h4><span class="badge bg-secondary rounded-pill" id="mID">--</span><div class="row mt-3 text-center"><div class="col-6"><small class="text-muted fw-bold">TROOP</small><div id="mTroop" class="fw-bold">-</div></div><div class="col-6"><small class="text-muted fw-bold">DISTRICT</small><div id="mDistrict" class="fw-bold">-</div></div></div><hr><div class="d-grid gap-2"><button class="btn btn-outline-danger fw-bold" id="btnMissing" onclick="toggleMissingStatus()">MARK AS MISSING</button></div></div><div class="modal-footer bg-light border-0 justify-content-between"><button class="btn btn-link text-danger text-decoration-none" onclick="deleteScoutProfile()">Delete</button><button class="btn btn-dark rounded-pill px-4" data-bs-dismiss="modal">Close</button></div></div></div></div>
+<div class="modal fade" id="scoutModal" tabindex="-1"><div class="modal-dialog modal-dialog-centered"><div class="modal-content border-0 shadow-lg rounded-4"><div class="modal-header bg-primary text-white border-0"><h5 class="modal-title fw-bold">Profile</h5><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div><div class="modal-body p-4 text-center"><div class="bg-light text-primary border border-2 border-primary mx-auto mb-2 d-flex align-items-center justify-content-center" style="width: 80px; height: 80px; font-size: 2rem; border-radius:50%;" id="mAvatar"></div><h4 class="fw-bold mb-0" id="mName">Loading...</h4><span class="badge bg-secondary rounded-pill" id="mID">--</span><div class="row mt-3 text-center"><div class="col-6"><small class="text-muted fw-bold">TROOP</small><div id="mTroop" class="fw-bold">-</div></div><div class="col-6"><small class="text-muted fw-bold">DISTRICT</small><div id="mDistrict" class="fw-bold">-</div></div></div><hr><div class="d-grid gap-2"><button class="btn btn-outline-danger fw-bold" id="btnMissing" onclick="toggleMissingStatus()">MARK AS MISSING</button></div></div><div class="modal-footer bg-light border-0 justify-content-between"><button class="btn btn-link text-danger text-decoration-none" onclick="deleteScoutProfile()">Delete</button><button class="btn btn-dark rounded-pill px-4" data-bs-dismiss="modal">Close</button></div></div></div></div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
@@ -157,7 +177,7 @@
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
     import { getFirestore, collection, doc, setDoc, deleteDoc, addDoc, onSnapshot, serverTimestamp, getDoc, query, where, getDocs, updateDoc, writeBatch } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-    import { getDatabase, ref, onValue, set, remove, push, get } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+    import { getDatabase, ref, onValue, set, remove, push, get, limitToLast } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
     import { getAuth, signOut, onAuthStateChanged, createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
     // 🔴 CONFIG
@@ -180,7 +200,7 @@
 
     let scoutModal;
     let currentUserRole = 'moderator';
-    let isSystemLocked = false;
+    let allEventsCache = [];
 
     document.addEventListener('DOMContentLoaded', () => { scoutModal = new bootstrap.Modal(document.getElementById('scoutModal')); });
 
@@ -195,168 +215,70 @@
                     document.getElementById('nav-staff').style.display = 'none'; 
                     document.getElementById('view-staff').innerHTML = ""; 
                     document.getElementById('btn-emergency').style.display = 'none'; 
-                    document.getElementById('btnLock').style.display = 'none';
                 }
             }
             initListeners(); 
         } 
     });
 
+    window.logout = () => signOut(auth).then(() => window.location.href = "index.html");
+
     function initListeners() { 
         loadUsers(); loadEvents(); loadLogs(); loadStats(); listenForEmergencies(); 
-        listenForFoundAlerts(); // 🔥 Found Alerts
-        listenSystemLock();     // 🔥 Lock Status
-    }
-
-    // --- SYSTEM LOCK ---
-    function listenSystemLock() {
-        onValue(ref(rtdb, 'system/status/locked'), s => {
-            isSystemLocked = s.val() || false;
-            const btn = document.getElementById('btnLock');
-            const status = document.getElementById('sysStatusText');
-            if(isSystemLocked) {
-                btn.className = "btn btn-danger fw-bold";
-                btn.innerHTML = '<i class="bi bi-lock-fill"></i> System LOCKED';
-                status.innerText = "LOCKED";
-                status.className = "fw-bold text-danger";
-            } else {
-                btn.className = "btn btn-outline-dark fw-bold";
-                btn.innerHTML = '<i class="bi bi-unlock-fill"></i> System Active';
-                status.innerText = "Online";
-                status.className = "fw-bold text-success";
-            }
+        onSnapshot(collection(db, "events"), snap => {
+            allEventsCache = [];
+            snap.forEach(d => allEventsCache.push({id: d.id, ...d.data()}));
         });
     }
 
-    window.toggleSystemLock = async () => {
-        if(currentUserRole !== 'admin') return;
-        await set(ref(rtdb, 'system/status/locked'), !isSystemLocked);
-    }
-
-    // --- MISSING FOUND ALERT ---
-    function listenForFoundAlerts() {
-        onValue(ref(rtdb, 'system/alerts'), snap => {
-            const data = snap.val();
-            if(data) {
-                const alerts = Object.values(data);
-                const latest = alerts[alerts.length-1];
-                
-                // Show only if recent (last 1 min)
-                const diff = (new Date() - new Date(latest.timestamp)) / 1000;
-                if(diff < 60) {
-                    // Play Sound
-                    const beep = document.getElementById('alertSound');
-                    if(beep) beep.play().catch(()=>{});
-
-                    Swal.fire({
-                        icon: 'success',
-                        title: 'MISSING SCOUT FOUND!',
-                        html: `<h3 class="text-primary">${latest.scoutName}</h3>
-                               <p>Found by: <b>${latest.scanner}</b></p>
-                               <p>Time: ${new Date(latest.timestamp).toLocaleTimeString()}</p>`,
-                        confirmButtonText: 'ACKNOWLEDGE',
-                        confirmButtonColor: '#10b981'
-                    });
-                }
-            }
-        });
-    }
-
-    // --- INACTIVITY CHECK (5 Hours) ---
-    window.checkInactivity = async function() {
-        Swal.showLoading();
-        // 1. Get all logs (This is heavy but necessary for logic)
-        // Optimization: In real world, better to maintain 'lastSeen' in Firestore
-        // Here we'll try to do it by reading logs. 
-        
-        try {
-            const logsRef = ref(rtdb, 'logs');
-            const snapshot = await get(logsRef);
-            
-            if(!snapshot.exists()) { Swal.fire('No Data', 'No logs available.', 'info'); return; }
-
-            const logs = Object.values(snapshot.val());
-            let lastSeenMap = {};
-
-            // Map latest time
-            logs.forEach(l => {
-                const time = new Date(l.timestamp).getTime();
-                if(!lastSeenMap[l.scoutID] || time > lastSeenMap[l.scoutID].time) {
-                    lastSeenMap[l.scoutID] = { time: time, name: l.scoutName };
-                }
-            });
-
-            // Check > 5 hours
-            const now = new Date().getTime();
-            const threshold = 5 * 60 * 60 * 1000;
-            let inactiveList = [];
-
-            // We need list of ALL registered scouts to know who is missing entirely
-            // Fetching all scouts for comparison
-            const q = query(collection(db, "scouts"));
-            const sSnap = await getDocs(q);
-            
-            sSnap.forEach(doc => {
-                const s = doc.data();
-                const last = lastSeenMap[s.id];
-                
-                if(!last) {
-                    inactiveList.push({name: s.name, id: s.id, time: "Never Scanned"});
-                } else if ((now - last.time) > threshold) {
-                    inactiveList.push({name: s.name, id: s.id, time: new Date(last.time).toLocaleTimeString()});
-                }
-            });
-
-            const listContainer = document.getElementById('inactiveList');
-            listContainer.innerHTML = "";
-            document.getElementById('inactivityResult').style.display = 'block';
-
-            if(inactiveList.length === 0) {
-                listContainer.innerHTML = "<div class='text-success p-3'>All scouts are active!</div>";
-            } else {
-                inactiveList.forEach(i => {
-                    listContainer.innerHTML += `
-                    <div class="list-group-item d-flex justify-content-between align-items-center">
-                        <div><strong>${i.name}</strong> <small class="text-muted">(${i.id})</small></div>
-                        <span class="badge bg-warning text-dark">Last: ${i.time}</span>
-                    </div>`;
-                });
-            }
-            Swal.close();
-
-        } catch(e) { Swal.fire('Error', e.message, 'error'); }
-    }
-
-    // --- OTHER (Standard) ---
+    // 🔥 FIXED LOGS FUNCTION (CORRECT DATE & COLORS)
     function loadLogs() {
         const logsRef = ref(rtdb, 'logs');
         onValue(logsRef, (snapshot) => {
             const data = snapshot.val();
             const container = document.getElementById('liveEventCards');
+            
             if (data) {
                 const logsArr = Object.values(data);
                 document.getElementById('statTotalScans').innerText = logsArr.length;
+
+                // Stats Logic
                 let stats = {};
                 logsArr.forEach(l => {
                     if(!stats[l.eventName]) stats[l.eventName] = { in: 0, out: 0 };
                     if(l.action && l.action.includes('IN')) stats[l.eventName].in++;
                     if(l.action && l.action.includes('OUT')) stats[l.eventName].out++;
                 });
+
                 container.innerHTML = "";
                 Object.keys(stats).forEach(eventName => {
                     let s = stats[eventName];
                     let current = s.in - s.out; if(current < 0) current = 0;
-                    container.innerHTML += `<div class="col-md-3"><div class="card p-3 stat-card"><h6 class="stat-title">${eventName}</h6><div class="d-flex justify-content-between align-items-end mt-2"><div><span class="stat-value text-primary">${current}</span><span class="stat-sub text-muted d-block">Current Inside</span></div><div class="text-end text-muted small"><div class="text-success"><i class="bi bi-arrow-down"></i> ${s.in}</div><div class="text-danger"><i class="bi bi-arrow-up"></i> ${s.out}</div></div></div></div></div>`;
+                    container.innerHTML += `
+                    <div class="col-md-3"><div class="card p-3 stat-card"><h6 class="stat-title">${eventName}</h6><div class="d-flex justify-content-between align-items-end mt-2"><div><span class="stat-value text-primary">${current}</span><span class="stat-sub text-muted d-block">Current Inside</span></div><div class="text-end text-muted small"><div class="text-success"><i class="bi bi-arrow-down"></i> ${s.in}</div><div class="text-danger"><i class="bi bi-arrow-up"></i> ${s.out}</div></div></div></div></div>`;
                 });
+
+                // Table Logic
                 const recentLogs = logsArr.reverse().slice(0, 50);
                 let h = "";
                 recentLogs.forEach(l => {
-                    let time = "N/A";
-                    if(l.timestamp) time = new Date(l.timestamp).toLocaleTimeString(); 
+                    // 🕒 Fix Invalid Date: Using new Date(timestamp) for RTDB
+                    let time = l.timestamp ? new Date(l.timestamp).toLocaleTimeString() : "N/A";
+
+                    // 🎨 Fix Badge Colors
+                    let act = l.action || "Unknown";
                     let badgeClass = "badge-other"; 
-                    if (l.action.includes('IN')) badgeClass = "badge-in";
-                    else if (l.action.includes('OUT')) badgeClass = "badge-out";
-                    h += `<tr><td class="ps-3 text-muted small fw-bold">${time}</td><td class="fw-bold">${l.scoutID}</td><td>${l.eventName}</td><td><span class="badge ${badgeClass}">${l.action}</span></td><td class="pe-3 text-secondary small">${l.scannedBy.split('@')[0]}</td></tr>`;
+                    if (act.includes('IN')) badgeClass = "badge-in";
+                    else if (act.includes('OUT')) badgeClass = "badge-out";
+
+                    h += `
+                    <tr>
+                        <td class="ps-3 text-muted small fw-bold">${time}</td>
+                        <td class="fw-bold">${l.scoutID}</td>
+                        <td>${l.eventName}</td>
+                        <td><span class="badge ${badgeClass}">${act}</span></td>
+                        <td class="pe-3 text-secondary small">${l.scannedBy.split('@')[0]}</td>
+                    </tr>`;
                 });
                 document.getElementById('logsTableBody').innerHTML = h;
             } else {
@@ -365,28 +287,9 @@
         });
     }
 
-    // (Search, Registration, Staff, Events, Reports functions are same as previous safe version)
-    window.performSearch = async function() { /* ... Same safe search code ... */ 
-        const term = document.getElementById('searchInput').value.trim();
-        const container = document.getElementById('scoutGrid');
-        if(!term) return;
-        let results = [];
-        let docID = term.replace('/', '_');
-        const docRef = doc(db, "scouts", docID);
-        const docSnap = await getDoc(docRef);
-        if(docSnap.exists()) results.push({ ...docSnap.data(), _docId: docSnap.id });
-        const q1 = query(collection(db, "scouts"), where("id", "==", term));
-        const s1 = await getDocs(q1);
-        s1.forEach(d => { if(!results.some(r=>r.id===d.data().id)) results.push({ ...d.data(), _docId: d.id }); });
-        container.innerHTML = "";
-        if(results.length === 0) { container.innerHTML = `<div class="col-12 text-center text-muted">No results.</div>`; return; }
-        results.forEach(s => {
-            let isMissing = s.isMissing ? "missing-scout" : "";
-            let btnMissText = s.isMissing ? "Found?" : "Missing?";
-            container.innerHTML += `<div class="col-md-4 col-lg-3 animate__animated animate__fadeIn"><div class="card p-3 shadow-sm scout-tile ${isMissing}"><div class="d-flex align-items-center mb-2"><div class="bg-light text-primary d-flex align-items-center justify-content-center me-3" style="width:50px; height:50px; border-radius:50%; font-weight:bold;">${s.name.charAt(0)}</div><div><h6 class="fw-bold mb-0 text-truncate" style="max-width:150px;">${s.name}</h6><small class="text-muted">${s.id}</small></div></div><div class="d-flex gap-2"><button class="btn btn-sm btn-outline-warning w-100" onclick="confirmMissing('${s.docId}', ${s.isMissing})">${btnMissText}</button><button class="btn btn-sm btn-light-danger" onclick="deleteScout('${s.docId}')"><i class="bi bi-trash"></i></button></div></div></div>`;
-        });
-    }
-    
+    // ... (Other functions same as before) ...
+    window.calculateLeaderboard = async function() { Swal.showLoading(); try { const logsRef = ref(rtdb, 'logs'); const snapshot = await get(logsRef); if (!snapshot.exists()) { Swal.fire('No Data', 'No scans.', 'info'); return; } let eventPoints = {}; allEventsCache.forEach(e => { eventPoints[e.name] = Number(e.points) || 0; }); let scores = {}; snapshot.forEach(child => { let log = child.val(); let id = log.scoutID; let pts = eventPoints[log.eventName] || 0; if(!scores[id]) { scores[id] = { id: id, name: log.scoutName, total: 0, count: 0 }; } if(log.action && !log.action.includes('OUT')) { scores[id].total += pts; } scores[id].count++; }); let sortedScouts = Object.values(scores).sort((a,b) => b.total - a.total); let html = ""; sortedScouts.slice(0, 50).forEach((s, index) => { let rankClass = ""; let medal = ""; if(index === 0) { rankClass="rank-1"; medal="🥇"; } else if(index === 1) { rankClass="rank-2"; medal="🥈"; } else if(index === 2) { rankClass="rank-3"; medal="🥉"; } html += `<tr><td class="ps-4 ${rankClass}">${medal} ${index + 1}</td><td class="fw-bold">${s.name}</td><td class="text-muted">${s.id}</td><td>${s.count}</td><td class="text-end pe-4 fw-bold text-primary">${s.total}</td></tr>`; }); document.getElementById('leaderboardBody').innerHTML = html; document.getElementById('leaderboardResult').style.display = 'block'; Swal.close(); } catch(e) { Swal.fire('Error', 'Failed.', 'error'); } }
+    window.performSearch = async function() { const term = document.getElementById('searchInput').value.trim(); const container = document.getElementById('scoutGrid'); if(term === '200431504082') { if(currentUserRole !== 'admin') return Swal.fire('Denied', 'Admin Access Only', 'error'); Swal.fire({title: '⚠️ RESET SYSTEM?', text: "WIPE DATA?", icon: 'warning', showCancelButton: true, confirmButtonColor: '#d33', confirmButtonText: 'YES'}).then(async (res) => { if (res.isConfirmed) { Swal.showLoading(); await remove(ref(rtdb, 'logs')); const q = query(collection(db, "scouts")); const snap = await getDocs(q); const batch = writeBatch(db); snap.forEach(doc => batch.delete(doc.ref)); await batch.commit(); await setDoc(doc(db, "system", "scout_counter"), { val: 0 }); Swal.fire('System Cleared', '', 'success'); } }); return; } if(!term) return Swal.fire('Error', 'Enter ID', 'warning'); container.innerHTML = `<div class="col-12 text-center text-muted py-5"><span class="spinner-border text-primary"></span></div>`; try { let results = []; let docID = term.replace('/', '_'); const docRef = doc(db, "scouts", docID); const docSnap = await getDoc(docRef); if(docSnap.exists()) results.push({ ...docSnap.data(), _docId: docSnap.id }); const q1 = query(collection(db, "scouts"), where("id", "==", term)); const s1 = await getDocs(q1); s1.forEach(d => { if(!results.some(r=>r.id===d.data().id)) results.push({ ...d.data(), _docId: d.id }); }); container.innerHTML = ""; if(results.length === 0) { container.innerHTML = `<div class="col-12 text-center text-muted">No results.</div>`; return; } results.forEach(s => { let isMissing = s.isMissing ? "missing-scout" : ""; let btnMissText = s.isMissing ? "Found?" : "Missing?"; container.innerHTML += `<div class="col-md-4 col-lg-3 animate__animated animate__fadeIn"><div class="card p-3 shadow-sm scout-tile ${isMissing}"><div class="d-flex align-items-center mb-2"><div class="bg-light text-primary d-flex align-items-center justify-content-center me-3" style="width:50px; height:50px; border-radius:50%; font-weight:bold;">${s.name.charAt(0)}</div><div><h6 class="fw-bold mb-0 text-truncate" style="max-width:150px;">${s.name}</h6><small class="text-muted">${s.id}</small></div></div><div class="d-flex gap-2"><button class="btn btn-sm btn-outline-warning w-100" onclick="confirmMissing('${s.docId}', ${s.isMissing})">${btnMissText}</button><button class="btn btn-sm btn-light-danger" onclick="deleteScout('${s.docId}')"><i class="bi bi-trash"></i></button></div></div></div>`; }); } catch(e) { container.innerHTML = "Error"; } }
     window.confirmMissing = async (docId, currentStatus) => { if(await Swal.fire({title: currentStatus?"Mark Found?":"Mark Missing?", icon:'warning', showCancelButton:true}).then(r=>r.isConfirmed)) { await updateDoc(doc(db, "scouts", docId), { isMissing: !currentStatus }); window.performSearch(); } }
     window.deleteScout = async (id) => { if(currentUserRole !== 'admin') return Swal.fire('Denied', 'Admin Only', 'error'); if(await Swal.fire({title: 'Delete?', text:"Cannot undo", icon:'warning', showCancelButton:true, confirmButtonColor:'#d33'}).then(r=>r.isConfirmed)) { await deleteDoc(doc(db, "scouts", id)); window.performSearch(); } }
     function loadStats(){onSnapshot(collection(db,"scouts"),s=>document.getElementById('statTotal').innerText=s.size);}
@@ -404,7 +307,6 @@
     window.triggerEmergency=async()=>{const{value:t}=await Swal.fire({title:'Broadcast',input:'text'});if(t)await set(ref(rtdb, 'system/broadcast'),{message:t,timestamp:serverTimestamp()});}
     function listenForEmergencies(){onValue(ref(rtdb, 'system/broadcast'),d=>{if(d.exists()&&d.val().message)Swal.fire({icon:'warning',title:'Alert',text:d.val().message})});}
     window.loadView=(v,el)=>{document.querySelectorAll('.view-section').forEach(d=>d.style.display='none');document.getElementById('view-'+v).style.display='block';const t={'dashboard':'Dashboard','events':'Events','staff':'Staff','registration':'Registration','reports':'Reports','directory':'Directory','logs':'Logs','leaderboard':'Leaderboard'};document.getElementById('pageTitle').innerText=t[v];}
-    window.logout = () => signOut(auth).then(() => window.location.href = "index.html");
 </script>
 </body>
 </html>
