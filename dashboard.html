@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Keboree Admin</title>
+    <title>Scout Admin Dashboard</title>
+    
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
@@ -16,16 +17,23 @@
     <style>
         body { background-color: #f3f4f6; font-family: 'Poppins', sans-serif; color: #4b5563; }
         .sidebar { position: fixed; height: 100vh; width: 260px; background: #fff; border-right: 1px solid #e5e7eb; padding-top: 30px; z-index: 1000; }
-        .sidebar h3 { color: #8b5cf6; text-align: center; font-weight: 800; margin-bottom: 40px; letter-spacing: 1px; }
-        .nav-link { color: #6b7280; padding: 12px 25px; margin: 4px 15px; border-radius: 12px; transition: 0.3s; font-weight: 500; cursor: pointer; }
+        .sidebar h3 { color: #8b5cf6; text-align: center; font-weight: 700; margin-bottom: 40px; }
+        .nav-link { color: #6b7280; padding: 12px 25px; margin: 4px 15px; border-radius: 12px; transition: 0.3s; font-weight: 500; cursor: pointer; display: flex; align-items: center; }
         .nav-link:hover, .nav-link.active { background-color: #f5f3ff; color: #7c3aed; }
         .main-content { margin-left: 260px; padding: 40px; }
         .card { border: none; background: #fff; border-radius: 16px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.02); }
         .btn-primary { background: #8b5cf6; border: none; } .btn-primary:hover { background: #7c3aed; }
-        .stat-card { border-left: 5px solid #8b5cf6; transition: 0.3s; }
-        .badge-in { background-color: #d1fae5; color: #065f46; }
-        .badge-out { background-color: #fee2e2; color: #991b1b; }
-        .badge-other { background-color: #e0e7ff; color: #3730a3; }
+        
+        /* Lock Button Styles */
+        .btn-lock-active { border: 2px solid #10b981; color: #10b981; font-weight: 600; }
+        .btn-lock-locked { background-color: #ef4444; color: white; border: 2px solid #ef4444; font-weight: 600; animation: pulse 2s infinite; }
+        
+        /* Alert Badge */
+        .alert-badge { background: #ef4444; color: white; padding: 2px 8px; border-radius: 10px; font-size: 0.8rem; margin-left: auto; display: none; }
+        
+        /* Alert Card */
+        .alert-item { border-left: 4px solid #ef4444; background: #fff5f5; transition: 0.2s; }
+        .alert-item:hover { transform: translateX(5px); }
     </style>
 </head>
 <body>
@@ -36,6 +44,9 @@
     <h3>KEBOREE 2K26</h3>
     <ul class="nav flex-column">
         <li class="nav-item"><a class="nav-link active" onclick="loadView('dashboard', this)"><i class="bi bi-grid-fill me-2"></i> Overview</a></li>
+        
+        <li class="nav-item"><a class="nav-link" onclick="loadView('alerts', this)"><i class="bi bi-bell-fill me-2"></i> Alerts <span id="navAlertBadge" class="alert-badge">0</span></a></li>
+        
         <li class="nav-item"><a class="nav-link" onclick="loadView('directory', this)"><i class="bi bi-folder2-open me-2"></i> Directory</a></li>
         <li class="nav-item"><a class="nav-link" onclick="loadView('events', this)"><i class="bi bi-calendar4-event me-2"></i> Events</a></li>
         <li class="nav-item" id="nav-staff"><a class="nav-link" onclick="loadView('staff', this)"><i class="bi bi-people-fill me-2"></i> Staff</a></li>
@@ -49,43 +60,101 @@
 <div class="main-content">
     <div class="d-flex justify-content-between align-items-center mb-5">
         <div><h3 class="fw-bold mb-1" id="pageTitle">Dashboard</h3><span class="badge bg-light text-primary border" id="userRoleDisplay">Loading...</span></div>
-        <button onclick="triggerEmergency()" class="btn btn-outline-danger rounded-pill fw-bold" id="btn-emergency"><i class="bi bi-megaphone-fill"></i> Broadcast</button>
+        
+        <div class="d-flex gap-2">
+            <button onclick="toggleSystemLock()" id="btnLock" class="btn btn-lock-active px-4 rounded-pill"><i class="bi bi-unlock-fill me-2"></i> Active</button>
+            <button onclick="triggerEmergency()" class="btn btn-outline-dark rounded-pill fw-bold" id="btn-emergency"><i class="bi bi-megaphone-fill me-2"></i> Broadcast</button>
+        </div>
     </div>
 
     <div id="view-dashboard" class="view-section animate__animated animate__fadeIn">
         <div class="row g-4 mb-4">
             <div class="col-md-4"><div class="card p-4"><h6 class="text-muted small fw-bold">TOTAL REGISTERED</h6><h2 class="fw-bold text-dark" id="statTotal">0</h2></div></div>
             <div class="col-md-4"><div class="card p-4"><h6 class="text-muted small fw-bold">TOTAL SCANS</h6><h2 class="fw-bold text-dark" id="statTotalScans">0</h2></div></div>
-            <div class="col-md-4"><div class="card p-4"><h6 class="text-muted small fw-bold">SYSTEM</h6><h4 class="fw-bold text-success">Online</h4></div></div>
+            <div class="col-md-4"><div class="card p-4"><h6 class="text-muted small fw-bold">SYSTEM</h6><h4 class="fw-bold text-success" id="sysStatusText">Online</h4></div></div>
         </div>
         <h5 class="fw-bold mb-3 text-secondary">Live Event Status</h5>
         <div id="liveEventCards" class="row g-4"><div class="col-12 text-center text-muted py-5">Waiting for scan data...</div></div>
     </div>
 
-    <div id="view-directory" class="view-section" style="display:none;"><div class="card p-4 mb-4"><h5 class="fw-bold mb-3">Find Scout</h5><div class="input-group"><input type="text" id="searchInput" class="form-control" placeholder="Enter ID"><button class="btn btn-primary px-4" onclick="performSearch()">SEARCH</button></div></div><div id="scoutGrid" class="row g-3"></div></div>
-    <div id="view-events" class="view-section" style="display:none;"><div class="row"><div class="col-md-5"><div class="card p-4"><h5>Create Event</h5><input id="evtName" class="form-control mb-2" placeholder="Name"><select id="evtType" class="form-select mb-2"><option>ACCESS</option><option>ACTIVITY</option></select><input id="evtActions" class="form-control mb-2" placeholder="Buttons (IN,OUT)"><input id="evtPoints" type="number" class="form-control mb-2" placeholder="Points"><button onclick="saveNewEvent()" class="btn btn-primary w-100">Create</button></div></div><div class="col-md-7"><div class="card p-4"><h5>Events</h5><div id="eventsList"></div></div></div></div></div>
-    <div id="view-staff" class="view-section" style="display:none;"><div class="row"><div class="col-md-4"><div class="card p-4"><h5>Add Staff</h5><input id="newEmail" class="form-control mb-2" placeholder="Email"><input id="newPass" class="form-control mb-2" placeholder="Pass"><select id="newRole" class="form-select mb-2"><option value="scanner">Scanner</option><option value="admin">Admin</option></select><button onclick="createNewUser()" class="btn btn-primary w-100">Add</button></div></div><div class="col-md-8"><div class="card p-4"><h5>Team</h5><table class="table"><tbody id="usersTableBody"></tbody></table></div></div></div></div>
-    <div id="view-registration" class="view-section" style="display:none;"><div class="card p-4"><h5>Registration</h5><input id="troopNumberInput" class="form-control mb-2" placeholder="Troop No"><textarea id="bulkInput" class="form-control mb-2" rows="5"></textarea><div id="regProgress" class="progress mb-2" style="display:none;height:5px;"><div class="progress-bar bg-primary" style="width:0%"></div></div><button onclick="processRegistration()" class="btn btn-primary">Generate</button><hr><button id="btnPrint" onclick="generatePDF()" class="btn btn-dark btn-sm" disabled>Download PDF</button><div id="stickerPreview" class="row g-2 p-2 bg-light mt-2" style="height:300px;overflow-y:auto;"></div></div></div>
-    <div id="view-reports" class="view-section" style="display:none;"><div class="row g-4"><div class="col-md-6"><div class="card p-5 text-center"><i class="bi bi-people display-4 mb-3"></i><h4>Scouts Report</h4><button onclick="downloadScoutReport()" class="btn btn-outline-primary">Download</button></div></div><div class="col-md-6"><div class="card p-5 text-center"><i class="bi bi-list display-4 mb-3"></i><h4>Logs Report</h4><button onclick="downloadLogReport()" class="btn btn-outline-success">Download</button></div></div></div></div>
+    <div id="view-alerts" class="view-section animate__animated animate__fadeIn" style="display:none;">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h5 class="fw-bold text-danger"><i class="bi bi-exclamation-triangle-fill me-2"></i>Missing Scouts Found</h5>
+            <button onclick="clearAlerts()" class="btn btn-sm btn-light text-muted border">Clear All</button>
+        </div>
+        <div id="alertsContainer" class="d-flex flex-column gap-3">
+            <div class="text-center text-muted py-5">No alerts.</div>
+        </div>
+    </div>
 
-    <div id="view-logs" class="view-section animate__animated animate__fadeIn" style="display:none;">
+    <div id="view-directory" class="view-section" style="display:none;">
+        <div class="card p-4 mb-4">
+            <h5 class="fw-bold mb-3">Find Scout</h5>
+            <div class="input-group">
+                <input type="text" id="searchInput" class="form-control" placeholder="Enter ID (e.g. KG25/001)">
+                <button class="btn btn-primary px-4" onclick="performSearch()">SEARCH</button>
+            </div>
+        </div>
+        <div id="scoutGrid" class="row g-3"><div class="col-12 text-center text-muted py-5">Results will appear here...</div></div>
+    </div>
+
+    <div id="view-events" class="view-section" style="display:none;">
+        <div class="row">
+            <div class="col-md-5">
+                <div class="card p-4">
+                    <h5 class="fw-bold mb-3">Create Event</h5>
+                    <input type="text" id="evtName" class="form-control mb-2" placeholder="Event Name">
+                    <select id="evtType" class="form-select mb-2"><option value="ACCESS">Access</option><option value="ACTIVITY">Activity</option><option value="ONE_TIME">One Time</option></select>
+                    <input type="text" id="evtActions" class="form-control mb-2" placeholder="Buttons (IN, OUT)">
+                    <input type="number" id="evtPoints" class="form-control mb-3" placeholder="Points">
+                    <button onclick="saveNewEvent()" class="btn btn-primary w-100">Create</button>
+                </div>
+            </div>
+            <div class="col-md-7"><div class="card p-4"><h5 class="fw-bold mb-3">Active Events</h5><div id="eventsList" class="d-flex flex-column gap-2"></div></div></div>
+        </div>
+    </div>
+
+    <div id="view-staff" class="view-section" style="display:none;">
+        <div class="row">
+            <div class="col-md-4">
+                <div class="card p-4">
+                    <h5 class="fw-bold mb-3">Add Staff</h5>
+                    <input type="email" id="newEmail" class="form-control mb-2" placeholder="Email">
+                    <input type="password" id="newPass" class="form-control mb-2" placeholder="Password">
+                    <select id="newRole" class="form-select mb-3"><option value="scanner">Scanner</option><option value="moderator">Moderator</option><option value="admin">Admin</option></select>
+                    <button onclick="createNewUser()" class="btn btn-primary w-100">Create</button>
+                </div>
+            </div>
+            <div class="col-md-8"><div class="card p-4"><h5 class="fw-bold mb-3">Team</h5><table class="table"><tbody id="usersTableBody"></tbody></table></div></div>
+        </div>
+    </div>
+
+    <div id="view-registration" class="view-section" style="display:none;">
+        <div class="row">
+            <div class="col-md-5">
+                <div class="card p-4">
+                    <h5 class="fw-bold mb-3">Bulk Registration</h5>
+                    <input type="text" id="troopNumberInput" class="form-control mb-2 fw-bold" placeholder="Troop No (e.g. 25)">
+                    <textarea id="bulkInput" class="form-control mb-3" rows="6" placeholder="Name, Troop, District..."></textarea>
+                    <div id="regProgress" class="progress mb-3" style="display:none; height:5px;"><div class="progress-bar bg-primary" style="width:0%"></div></div>
+                    <button onclick="processRegistration()" class="btn btn-primary w-100">Generate IDs</button>
+                </div>
+            </div>
+            <div class="col-md-7"><div class="card p-4 h-100 text-center"><button id="btnPrint" onclick="generatePDF()" class="btn btn-dark btn-sm mb-3" disabled>Download PDF</button><div id="stickerPreview" class="row g-2 p-2 bg-light rounded" style="height:300px; overflow-y:auto;"></div></div></div>
+        </div>
+    </div>
+
+    <div id="view-reports" class="view-section" style="display:none;">
+        <div class="row g-4">
+            <div class="col-md-6"><div class="card p-5 text-center h-100"><i class="bi bi-people-fill display-4 text-primary mb-3"></i><h4>Registered Scouts</h4><button onclick="downloadScoutReport()" class="btn btn-outline-primary fw-bold mt-3">Download PDF</button></div></div>
+            <div class="col-md-6"><div class="card p-5 text-center h-100"><i class="bi bi-list-columns-reverse display-4 text-success mb-3"></i><h4>Full Event Log</h4><button onclick="downloadLogReport()" class="btn btn-outline-success fw-bold mt-3">Download PDF</button></div></div>
+        </div>
+    </div>
+
+    <div id="view-logs" class="view-section" style="display:none;">
         <div class="card p-4">
             <h5 class="fw-bold mb-4">Live Logs</h5>
-            <div class="table-responsive">
-                <table class="table table-hover align-middle">
-                    <thead class="bg-light">
-                        <tr>
-                            <th class="ps-3">Time</th>
-                            <th>ID & Details</th> <th>Event</th>
-                            <th>Action</th>
-                            <th>Scanner</th>
-                        </tr>
-                    </thead>
-                    <tbody id="logsTableBody">
-                        <tr><td colspan="5" class="text-center text-muted">Loading logs...</td></tr>
-                    </tbody>
-                </table>
-            </div>
+            <div class="table-responsive"><table class="table table-hover align-middle"><thead class="bg-light"><tr><th class="ps-3">Time</th><th>ID & Details</th><th>Event</th><th>Action</th><th>Scanner</th></tr></thead><tbody id="logsTableBody"></tbody></table></div>
         </div>
     </div>
 </div>
@@ -121,6 +190,8 @@
 
     let scoutModal;
     let currentUserRole = 'moderator';
+    let isSystemLocked = false;
+    let alertCount = 0;
 
     document.addEventListener('DOMContentLoaded', () => { scoutModal = new bootstrap.Modal(document.getElementById('scoutModal')); });
 
@@ -132,27 +203,92 @@
             if(currentUserRole==='moderator') {
                 document.getElementById('nav-staff').style.display = 'none'; 
                 document.getElementById('btn-emergency').style.display = 'none'; 
+                document.getElementById('btnLock').style.display = 'none';
             }
             initListeners(); 
         } 
     });
 
-    window.logout = () => signOut(auth).then(() => window.location.href = "index.html");
+    function initListeners() { 
+        loadUsers(); loadEvents(); loadLogs(); loadStats(); listenForEmergencies(); 
+        listenSystemLock(); listenForAlerts();
+    }
 
-    function initListeners() { loadUsers(); loadEvents(); loadLogs(); loadStats(); listenForEmergencies(); }
+    // --- 🔥 ALERTS TAB LOGIC ---
+    function listenForAlerts() {
+        onValue(ref(rtdb, 'system/alerts'), snap => {
+            const data = snap.val();
+            const container = document.getElementById('alertsContainer');
+            const badge = document.getElementById('navAlertBadge');
+            
+            if(data) {
+                const alerts = Object.values(data).reverse();
+                container.innerHTML = "";
+                alertCount = alerts.length;
+                
+                badge.innerText = alertCount;
+                badge.style.display = "inline-block";
 
-    // 🔥 LOGS WITH TIME FIX AND EXTRA DETAILS
+                alerts.forEach(a => {
+                    let time = new Date(a.timestamp).toLocaleTimeString();
+                    container.innerHTML += `
+                    <div class="card p-3 alert-item mb-2 shadow-sm">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="fw-bold text-danger mb-0">MISSING SCOUT FOUND</h6>
+                                <div class="fs-5 fw-bold text-dark">${a.scoutName}</div>
+                                <small class="text-muted">Found by: ${a.scanner}</small>
+                            </div>
+                            <div class="text-end">
+                                <span class="badge bg-danger">${time}</span>
+                            </div>
+                        </div>
+                    </div>`;
+                });
+            } else {
+                container.innerHTML = `<div class="text-center text-muted py-5">No alerts.</div>`;
+                badge.style.display = "none";
+            }
+        });
+    }
+    
+    window.clearAlerts = async () => { if(confirm("Clear All Alerts?")) await remove(ref(rtdb, 'system/alerts')); }
+
+    // --- 🔥 SYSTEM LOCK ---
+    function listenSystemLock() {
+        onValue(ref(rtdb, 'system/status/locked'), s => {
+            isSystemLocked = s.val() || false;
+            const btn = document.getElementById('btnLock');
+            const status = document.getElementById('sysStatusText');
+            if(isSystemLocked) {
+                btn.className = "btn btn-lock-locked px-4 rounded-pill";
+                btn.innerHTML = '<i class="bi bi-lock-fill me-2"></i> LOCKED';
+                status.innerText = "LOCKED";
+                status.className = "fw-bold text-danger";
+            } else {
+                btn.className = "btn btn-lock-active px-4 rounded-pill";
+                btn.innerHTML = '<i class="bi bi-unlock-fill me-2"></i> Active';
+                status.innerText = "Online";
+                status.className = "fw-bold text-success";
+            }
+        });
+    }
+    window.toggleSystemLock = async () => {
+        if(currentUserRole !== 'admin') return;
+        if(confirm(isSystemLocked ? "Unlock System?" : "LOCK SYSTEM? (Scanners will be blocked)")) {
+            await set(ref(rtdb, 'system/status/locked'), !isSystemLocked);
+        }
+    }
+
+    // --- LOGS ---
     function loadLogs() {
         const logsRef = ref(rtdb, 'logs');
         onValue(logsRef, (snapshot) => {
             const data = snapshot.val();
-            const container = document.getElementById('liveEventCards');
-            
             if (data) {
                 const logsArr = Object.values(data);
                 document.getElementById('statTotalScans').innerText = logsArr.length;
 
-                // Stats Logic
                 let stats = {};
                 logsArr.forEach(l => {
                     if(!stats[l.eventName]) stats[l.eventName] = { in: 0, out: 0 };
@@ -160,54 +296,38 @@
                     if(a.includes('IN')) stats[l.eventName].in++;
                     if(a.includes('OUT')) stats[l.eventName].out++;
                 });
-
-                container.innerHTML = "";
-                Object.keys(stats).forEach(eventName => {
-                    let s = stats[eventName];
-                    let current = s.in - s.out; if(current < 0) current = 0;
-                    container.innerHTML += `<div class="col-md-3"><div class="card p-3 stat-card"><h6 class="stat-title">${eventName}</h6><div class="d-flex justify-content-between align-items-end mt-2"><div><span class="stat-value text-primary">${current}</span><span class="stat-sub text-muted d-block">Inside</span></div><div class="text-end text-muted small"><div>In: ${s.in}</div><div>Out: ${s.out}</div></div></div></div></div>`;
+                let cards = "";
+                Object.keys(stats).forEach(k => {
+                    let s = stats[k];
+                    let cur = s.in - s.out; if(cur<0) cur=0;
+                    cards += `<div class="col-md-3"><div class="card p-3 stat-card"><h6 class="stat-title">${k}</h6><div class="d-flex justify-content-between align-items-end mt-2"><div><span class="stat-value text-primary">${cur}</span><span class="stat-sub text-muted d-block">Inside</span></div><div class="text-end text-muted small"><div>In: ${s.in}</div><div>Out: ${s.out}</div></div></div></div></div>`;
                 });
+                document.getElementById('liveEventCards').innerHTML = cards;
 
-                // Table Logic (Last 50)
+                // Logs Table
                 const recentLogs = logsArr.reverse().slice(0, 50);
                 let h = "";
-                
                 recentLogs.forEach(l => {
-                    // 🔥 TIME FIX
                     let time = "N/A";
-                    if(typeof l.timestamp === 'number') {
-                        time = new Date(l.timestamp).toLocaleTimeString(); // RTDB format
-                    } else if(l.timestamp && l.timestamp.seconds) {
-                        time = new Date(l.timestamp.seconds * 1000).toLocaleTimeString(); // Firestore format
-                    }
-
-                    // Badge Logic
-                    let act = l.action || "Unknown";
-                    let badgeClass = "badge-other"; 
-                    if (act.includes('IN')) badgeClass = "badge-in";
-                    else if (act.includes('OUT')) badgeClass = "badge-out";
-
-                    // 🔥 Name & Troop Display Logic
+                    if(typeof l.timestamp === 'number') time = new Date(l.timestamp).toLocaleTimeString();
+                    else if(l.timestamp && l.timestamp.seconds) time = new Date(l.timestamp.seconds*1000).toLocaleTimeString();
+                    
+                    let a = l.action || "-";
+                    let cls = "badge-other"; 
+                    if (a.includes('IN')) cls = "badge-in"; else if (a.includes('OUT')) cls = "badge-out";
+                    
                     let details = `<strong>${l.scoutID}</strong>`;
-                    if(l.scoutName) details += `<br><small class="text-muted fw-bold">${l.scoutName}</small>`;
-                    if(l.scoutTroop) details += `<br><small class="text-muted" style="font-size:0.75rem">${l.scoutTroop} • ${l.scoutDistrict || ''}</small>`;
+                    if(l.scoutName) details += `<br><small class="text-muted">${l.scoutName} • ${l.scoutTroop||''}</small>`;
 
-                    h += `
-                    <tr>
-                        <td class="ps-3 text-muted small fw-bold align-middle">${time}</td>
-                        <td class="align-middle">${details}</td>
-                        <td class="align-middle">${l.eventName}</td>
-                        <td class="align-middle"><span class="badge ${badgeClass}">${act}</span></td>
-                        <td class="pe-3 text-secondary small align-middle">${l.scannedBy ? l.scannedBy.split('@')[0] : '-'}</td>
-                    </tr>`;
+                    h += `<tr><td class="ps-3 text-muted small fw-bold align-middle">${time}</td><td class="align-middle">${details}</td><td class="align-middle">${l.eventName}</td><td class="align-middle"><span class="badge ${cls}">${a}</span></td><td class="pe-3 text-secondary small align-middle">${l.scannedBy.split('@')[0]}</td></tr>`;
                 });
                 document.getElementById('logsTableBody').innerHTML = h;
             }
         });
     }
 
-    // ... (Same Search, Reg, Staff, PDF logic as previous response) ...
-    window.performSearch=async()=>{let v=document.getElementById('searchInput').value.trim();if(!v)return;if(v==='200431504082'&&currentUserRole==='admin'){if(confirm("WIPE DATA?")){await remove(ref(rtdb,'logs'));const q=await getDocs(collection(db,"scouts"));const b=writeBatch(db);q.forEach(d=>b.delete(d.ref));await b.commit();await setDoc(doc(db,"system","scout_counter"),{val:0});alert("Cleared");}return;}let res=[];let snap=await getDoc(doc(db,"scouts",v.replace('/','_')));if(snap.exists())res.push({...snap.data(),docId:snap.id});else{let q=await getDocs(query(collection(db,"scouts"),where("id","==",v)));q.forEach(d=>res.push({...d.data(),docId:d.id}));}let h="";if(res.length===0)h=`<div class="col-12 text-center py-5 text-muted">No results</div>`;res.forEach(s=>{let m=s.isMissing?"missing-scout":"";h+=`<div class="col-md-4"><div class="card p-3 shadow-sm scout-tile ${m}"><div class="d-flex align-items-center mb-2"><div class="bg-light text-primary d-flex align-items-center justify-content-center me-3" style="width:50px;height:50px;border-radius:50%;font-weight:bold;">${s.name.charAt(0)}</div><div><h6 class="fw-bold mb-0 text-truncate" style="max-width:150px;">${s.name}</h6><small class="text-muted">${s.id}</small></div></div><div class="d-flex gap-2"><button class="btn btn-sm btn-outline-warning w-100" onclick="confirmMissing('${s.docId}',${s.isMissing})">${s.isMissing?"Found?":"Missing?"}</button><button class="btn btn-sm btn-light-danger" onclick="deleteScout('${s.docId}')">X</button></div></div></div>`;});document.getElementById('scoutGrid').innerHTML=h;}
+    // ... (Rest of functions: Search, Reg, Staff, Reports - SAME AS BEFORE) ...
+    window.performSearch=async()=>{let v=document.getElementById('searchInput').value.trim();if(!v)return;if(v==='200431504082'&&currentUserRole==='admin'){if(confirm("WIPE?")){await remove(ref(rtdb,'logs'));const q=await getDocs(collection(db,"scouts"));const b=writeBatch(db);q.forEach(d=>b.delete(d.ref));await b.commit();await setDoc(doc(db,"system","scout_counter"),{val:0});alert("Cleared");}return;}let res=[];let snap=await getDoc(doc(db,"scouts",v.replace('/','_')));if(snap.exists())res.push({...snap.data(),docId:snap.id});else{let q=await getDocs(query(collection(db,"scouts"),where("id","==",v)));q.forEach(d=>res.push({...d.data(),docId:d.id}));}let h="";if(res.length===0)h=`<div class="col-12 text-center py-5 text-muted">No results</div>`;res.forEach(s=>{let m=s.isMissing?"missing-scout":"";h+=`<div class="col-md-4"><div class="card p-3 shadow-sm scout-tile ${m}"><div class="d-flex align-items-center mb-2"><div class="bg-light text-primary d-flex align-items-center justify-content-center me-3" style="width:50px;height:50px;border-radius:50%;font-weight:bold;">${s.name.charAt(0)}</div><div><h6 class="fw-bold mb-0 text-truncate" style="max-width:150px;">${s.name}</h6><small class="text-muted">${s.id}</small></div></div><div class="d-flex gap-2"><button class="btn btn-sm btn-outline-warning w-100" onclick="confirmMissing('${s.docId}',${s.isMissing})">${s.isMissing?"Found?":"Missing?"}</button><button class="btn btn-sm btn-light-danger" onclick="deleteScout('${s.docId}')">X</button></div></div></div>`;});document.getElementById('scoutGrid').innerHTML=h;}
     window.confirmMissing=async(id,st)=>{if(confirm("Change Status?")){await updateDoc(doc(db,"scouts",id),{isMissing:!st});window.performSearch();}}
     window.deleteScout=async(id)=>{if(currentUserRole!=='admin')return alert('Denied');if(confirm("Delete?")){await deleteDoc(doc(db,"scouts",id));window.performSearch();}}
     function loadStats(){onSnapshot(collection(db,"scouts"),s=>document.getElementById('statTotal').innerText=s.size);}
@@ -220,11 +340,12 @@
     window.processRegistration=async()=>{const t=document.getElementById('troopNumberInput').value;const txt=document.getElementById('bulkInput').value;const l=txt.split('\n');let id=1;try{const c=await getDoc(doc(db,"system","scout_counter"));if(c.exists())id=c.data().val+1;}catch(e){}document.getElementById('regProgress').style.display='flex';window.recentScouts=[];for(let r of l){let p=r.split(',');if(p.length>=1){let sID=`KG${t}/${id.toString().padStart(3,'0')}`;await setDoc(doc(db,"scouts",`KG${t}_${id.toString().padStart(3,'0')}`),{name:p[0],troop:`Troop ${t}`,district:p[2]||'',id:sID,isMissing:false});window.recentScouts.push({id:sID,name:p[0],troop:`Troop ${t}`});id++;}}await setDoc(doc(db,"system","scout_counter"),{val:id-1});document.getElementById('regProgress').style.display='none';document.getElementById('btnPrint').disabled=false;showPreview();alert('Done');}
     window.recentScouts=[];function showPreview(){let h="";window.recentScouts.forEach(s=>{h+=`<div class="col-md-3"><div class="card p-2 text-center"><div id="qr_${s.id}" class="mx-auto"></div><small>${s.id}</small></div></div>`});document.getElementById('stickerPreview').innerHTML=h;setTimeout(()=>{window.recentScouts.forEach(s=>{new QRCode(document.getElementById(`qr_${s.id}`),{text:s.id,width:80,height:80})})},500);}
     window.generatePDF=()=>{const{jsPDF}=window.jspdf;const doc=new jsPDF();let x=10,y=10,w=45,h=65,c=0,r=0;const qc=document.getElementById('qr-hidden');window.recentScouts.forEach((s,i)=>{if(i>0&&i%16===0){doc.addPage();c=0;r=0}let cx=x+(c*(w+2)),cy=y+(r*(h+2));doc.rect(cx,cy,w,h);doc.setFontSize(10);doc.text(s.id,cx+w/2,cy+40,{align:"center"});qc.innerHTML='';new QRCode(qc,{text:s.id,width:100,height:100});let img=qc.querySelector('img').src;doc.addImage(img,'PNG',cx+(w-25)/2,cy+10,25,25);c++;if(c>=4){c=0;r++}});doc.save('IDs.pdf');}
-    window.triggerEmergency=async()=>{const{value:t}=await Swal.fire({title:'Broadcast',input:'text'});if(t)await set(ref(rtdb,'system/broadcast'),{message:t,timestamp:serverTimestamp()});}
-    function listenForEmergencies(){onValue(ref(rtdb,'system/broadcast'),d=>{if(d.exists()&&d.val().message)Swal.fire({icon:'warning',title:'Alert',text:d.val().message})});}
-    window.loadView=(v,el)=>{document.querySelectorAll('.view-section').forEach(d=>d.style.display='none');document.getElementById('view-'+v).style.display='block';}
     window.downloadScoutReport = async function() { Swal.showLoading(); const doc = new window.jspdf.jsPDF(); const q = query(collection(db, "scouts")); const snap = await getDocs(q); let data = []; snap.forEach(d => { let s=d.data(); data.push([s.id, s.name, s.troop, s.district]); }); doc.text("Registered Scouts", 14, 15); doc.autoTable({head: [['ID', 'Name', 'Troop', 'District']], body: data, startY: 20}); doc.save("Scouts_Report.pdf"); Swal.close(); }
     window.downloadLogReport = function() { Swal.showLoading(); const logsRef = ref(rtdb, 'logs'); onValue(logsRef, (snapshot) => { const data = snapshot.val(); if(!data) { Swal.fire('No Data', '', 'info'); return; } const doc = new window.jspdf.jsPDF(); let rows = []; Object.values(data).forEach(l => rows.push([new Date(l.timestamp).toLocaleString(), l.scoutID, l.eventName, l.action, l.scannedBy.split('@')[0]])); doc.text("Event Logs", 14, 15); doc.autoTable({head: [['Time', 'ID', 'Event', 'Action', 'Scanner']], body: rows, startY: 20}); doc.save("Logs_Report.pdf"); Swal.close(); }, {onlyOnce: true}); }
+    window.triggerEmergency=async()=>{const{value:t}=await Swal.fire({title:'Broadcast',input:'text'});if(t)await set(ref(rtdb,'system/broadcast'),{message:t,timestamp:serverTimestamp()});}
+    function listenForEmergencies(){onValue(ref(rtdb,'system/broadcast'),d=>{if(d.exists()&&d.val().message)Swal.fire({icon:'warning',title:'Alert',text:d.val().message})});}
+    window.loadView=(v,el)=>{document.querySelectorAll('.view-section').forEach(d=>d.style.display='none');document.getElementById('view-'+v).style.display='block';const t={'dashboard':'Dashboard','events':'Events','staff':'Staff','registration':'Registration','reports':'Reports','directory':'Directory','logs':'Logs','leaderboard':'Leaderboard','alerts':'Alerts'};document.getElementById('pageTitle').innerText=t[v];}
+    window.logout = () => signOut(auth).then(() => window.location.href = "index.html");
 </script>
 </body>
 </html>
