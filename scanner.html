@@ -11,14 +11,11 @@
         #reader { width: 100%; height: 100%; object-fit: cover; position: absolute; }
         .ui { position: absolute; width: 100%; height: 100%; z-index: 10; display: flex; flex-direction: column; justify-content: space-between; padding: 20px; pointer-events: none; }
         .pointer { pointer-events: auto; }
-        
         .glass { background: rgba(255,255,255,0.1); backdrop-filter: blur(10px); border-radius: 15px; padding: 10px; border: 1px solid rgba(255,255,255,0.2); margin-bottom: 10px; display: flex; align-items: center; }
         select, input { background: transparent; border: none; color: white; width: 100%; outline: none; font-weight: bold; }
         option { background: #000; }
-
         .scan-area { flex-grow: 1; display: flex; align-items: center; justify-content: center; position: relative; }
         .frame { width: 260px; height: 260px; border: 2px solid rgba(255,255,255,0.5); border-radius: 20px; position: relative; box-shadow: 0 0 0 100vmax rgba(0,0,0,0.6); }
-        
         .btn-scan { width: 80px; height: 80px; background: #0d6efd; border-radius: 50%; border: 4px solid rgba(255,255,255,0.3); color: white; font-size: 2rem; display: flex; align-items: center; justify-content: center; }
         .btn-scan.stop { background: #dc3545; }
         .btn-sm-c { width: 50px; height: 50px; background: rgba(255,255,255,0.2); border-radius: 50%; border: none; color: white; font-size: 1.2rem; }
@@ -45,10 +42,7 @@
         <div class="glass"><i class="bi bi-keyboard me-2 text-success"></i><input id="manId" placeholder="Enter ID"><button onclick="manual()" class="btn btn-sm text-success fw-bold">GO</button></div>
     </div>
 
-    <div class="scan-area">
-        <div class="frame" id="frame"></div>
-        <div id="stat" style="position:absolute; top:65%; color:#aaa; font-size:0.8rem;">READY</div>
-    </div>
+    <div class="scan-area"><div class="frame" id="frame"></div><div id="stat" style="position:absolute; top:65%; color:#aaa; font-size:0.8rem;">READY</div></div>
 
     <div class="d-flex justify-content-center gap-4 align-items-center pointer pb-4">
         <button class="btn-sm-c" onclick="flash()"><i class="bi bi-lightning-fill"></i></button>
@@ -65,18 +59,18 @@
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
     import { getFirestore, collection, doc, getDoc, onSnapshot, query, where, getDocs, updateDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-    import { getDatabase, ref, push, onValue, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+    import { getDatabase, ref, push, onValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
     import { getAuth, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
-    // 🔴 YOUR CONFIG
+    // 🔴 CONFIG
     const firebaseConfig = {
-        apiKey: "AIzaSyBsBsKnXv6FgYVk7OLo0XagFSBZgYajuNA",
-        authDomain: "qr-system-02---web-based.firebaseapp.com",
-        projectId: "qr-system-02---web-based",
-        storageBucket: "qr-system-02---web-based.firebasestorage.app",
-        messagingSenderId: "742559334366",
-        appId: "1:742559334366:web:0c104f39997de0572fe74f",
-        databaseURL: "https://qr-system-02---web-based-default-rtdb.asia-southeast1.firebasedatabase.app/"
+        apiKey: "YOUR_API_KEY",
+        authDomain: "YOUR_PROJECT.firebaseapp.com",
+        projectId: "YOUR_PROJECT",
+        storageBucket: "YOUR_PROJECT.appspot.com",
+        messagingSenderId: "SENDER_ID",
+        appId: "APP_ID",
+        databaseURL: "https://YOUR_DB_URL.firebaseio.com"
     };
 
     const app = initializeApp(firebaseConfig);
@@ -90,16 +84,20 @@
         if(!u) window.location.href="index.html";
         else {
             loadEvents(); initCam();
+            
+            // 🔥 LOCK LISTENER
             onValue(ref(rtdb, 'system/status/locked'), s => {
                 isLocked = s.val() || false;
                 document.getElementById('locked').style.display = isLocked ? 'flex' : 'none';
                 if(isLocked && isScanning) stop();
             });
+
+            // 🔥 BROADCAST (60 Sec Rule)
             onValue(ref(rtdb, 'system/broadcast'), s => {
                 let d = s.val();
                 if(d && d.message) {
-                    let diff = (Date.now() - d.timestamp)/1000/60;
-                    if(diff < 2) {
+                    let diff = (Date.now() - d.timestamp)/1000;
+                    if(diff < 60) {
                         document.getElementById('bMsg').innerText = d.message;
                         document.getElementById('broadcast').style.display = 'flex';
                         document.getElementById('beep').play().catch(()=>{});
@@ -127,6 +125,7 @@
     }
 
     window.toggle = () => {
+        if(isLocked) return;
         if(!selectedEvent) { Swal.fire({icon:'warning', title:'Select Event', toast:true, position:'top'}); return; }
         if(isScanning) stop(); else start();
     }
@@ -187,13 +186,14 @@
         });
     }
 
+    // 🔥 FIXED TIME & ALERT
     window.log = (act) => {
         Swal.showLoading();
         push(ref(rtdb, 'logs'), {
-            scoutID: currentScout.id, scoutName: currentScout.name, scoutTroop: currentScout.troop, scoutDistrict: currentScout.district||'',
+            scoutID: currentScout.id, scoutName: currentScout.name, scoutTroop: currentScout.troop,
             eventID: selectedEvent.id, eventName: selectedEvent.name,
             action: act, scannedBy: auth.currentUser.email,
-            timestamp: Date.now()
+            timestamp: Date.now() // ✅ Send Time
         }).then(() => {
             if(currentScout.isMissing) {
                 push(ref(rtdb, 'system/alerts'), { scoutName:currentScout.name, scanner:auth.currentUser.email, timestamp:Date.now() });
