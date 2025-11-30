@@ -16,34 +16,36 @@
     
     <style>
         body { background-color: #f3f4f6; font-family: 'Poppins', sans-serif; color: #333; }
-        .sidebar { position: fixed; height: 100vh; width: 260px; background: #fff; border-right: 1px solid #eee; padding-top: 30px; z-index: 1000; }
+        .sidebar { position: fixed; height: 100vh; width: 260px; background: #fff; padding-top: 30px; z-index: 1000; border-right: 1px solid #eee; }
         .main-content { margin-left: 260px; padding: 40px; }
         .nav-link { color: #666; padding: 12px 25px; cursor: pointer; border-radius: 10px; margin: 5px 15px; }
         .nav-link.active, .nav-link:hover { background-color: #eef2ff; color: #4f46e5; font-weight: 600; }
+        
         .card { border: none; border-radius: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.02); background: #fff; }
+        .stat-card { border-left: 4px solid #4f46e5; }
         
         /* Lock Button */
-        .btn-lock-active { border: 2px solid #10b981; color: #10b981; background: white; }
-        .btn-lock-locked { background-color: #ef4444; color: white; border: 2px solid #ef4444; animation: pulse 2s infinite; }
+        .btn-lock-on { background: #ef4444; color: white; border: none; animation: pulse 2s infinite; }
+        .btn-lock-off { border: 2px solid #10b981; color: #10b981; background: white; }
+        
+        /* Alerts */
+        .alert-card { background: #fef2f2; border-left: 4px solid #ef4444; }
+        .alert-badge { background: #ef4444; color: white; padding: 2px 8px; border-radius: 10px; font-size: 0.75rem; margin-left: auto; display: none; }
         
         /* Badges */
         .badge-in { background: #d1fae5; color: #065f46; }
         .badge-out { background: #fee2e2; color: #991b1b; }
         
-        /* Alerts */
-        .alert-badge { background: #ef4444; color: white; padding: 2px 8px; border-radius: 10px; font-size: 0.75rem; float: right; display: none; }
-        
-        @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); } 100% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); } }
+        @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); } 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); } }
     </style>
 </head>
 <body>
 
 <div id="qr-hidden" style="display:none;"></div>
 
-<!-- SIDEBAR -->
 <div class="sidebar">
     <h3 class="text-center fw-bold text-primary mb-4">KEBOREE 2K26</h3>
-    <a class="nav-link active" onclick="switchTab('dashboard', this)"><i class="bi bi-grid me-2"></i> Overview</a>
+    <a class="nav-link active" onclick="switchTab('dashboard', this)"><i class="bi bi-grid me-2"></i> Dashboard</a>
     <a class="nav-link" onclick="switchTab('alerts', this)"><i class="bi bi-bell me-2"></i> Alerts <span id="alertCount" class="alert-badge">0</span></a>
     <a class="nav-link" onclick="switchTab('directory', this)"><i class="bi bi-folder me-2"></i> Directory</a>
     <a class="nav-link" onclick="switchTab('events', this)"><i class="bi bi-calendar-event me-2"></i> Events</a>
@@ -57,23 +59,21 @@
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h3 class="fw-bold" id="pageTitle">Dashboard</h3>
         <div class="d-flex gap-2">
-            <button id="btnLock" onclick="toggleLock()" class="btn btn-lock-active rounded-pill fw-bold px-4">System Active</button>
-            <button onclick="sendBroadcast()" class="btn btn-outline-dark rounded-pill fw-bold">📢 Broadcast</button>
+            <button id="btnLock" onclick="toggleLock()" class="btn btn-lock-off fw-bold rounded-pill px-4">System Active</button>
+            <button onclick="sendBroadcast()" class="btn btn-dark rounded-pill fw-bold">📢 Broadcast</button>
         </div>
     </div>
 
-    <!-- 1. DASHBOARD -->
     <div id="tab-dashboard" class="tab-content">
         <div class="row g-4 mb-4">
-            <div class="col-md-4"><div class="card p-4"><h6 class="text-muted">TOTAL REGISTERED</h6><h2 class="fw-bold" id="totalScouts">0</h2></div></div>
-            <div class="col-md-4"><div class="card p-4"><h6 class="text-muted">TOTAL SCANS</h6><h2 class="fw-bold" id="totalScans">0</h2></div></div>
-            <div class="col-md-4"><div class="card p-4"><h6 class="text-muted">SYSTEM STATUS</h6><h4 class="text-success fw-bold" id="sysStatus">Online</h4></div></div>
+            <div class="col-md-4"><div class="card p-4 stat-card"><h6 class="text-muted">TOTAL REGISTERED</h6><h2 class="fw-bold" id="totalScouts">0</h2></div></div>
+            <div class="col-md-4"><div class="card p-4 stat-card"><h6 class="text-muted">TOTAL SCANS</h6><h2 class="fw-bold" id="totalScans">0</h2></div></div>
+            <div class="col-md-4"><div class="card p-4 stat-card"><h6 class="text-muted">SYSTEM STATUS</h6><h4 class="text-success fw-bold" id="sysStatus">Online</h4></div></div>
         </div>
         <h5 class="text-muted mb-3">Live Event Status</h5>
         <div id="liveStats" class="row g-4"><div class="col-12 text-center text-muted py-5">Waiting for data...</div></div>
     </div>
 
-    <!-- 2. ALERTS -->
     <div id="tab-alerts" class="tab-content" style="display:none;">
         <div class="d-flex justify-content-between mb-3">
             <h5 class="text-danger fw-bold">Missing Scouts Found</h5>
@@ -82,13 +82,16 @@
         <div id="alertList" class="d-flex flex-column gap-3"></div>
     </div>
 
-    <!-- 3. REGISTRATION -->
     <div id="tab-registration" class="tab-content" style="display:none;">
         <div class="card p-4">
             <h5 class="fw-bold mb-3">Bulk Registration</h5>
             <div class="row">
-                <div class="col-md-3"><input id="regTroop" class="form-control fw-bold" placeholder="Troop No (25)"></div>
-                <div class="col-md-9"><textarea id="regData" class="form-control" rows="5" placeholder="Name, Troop Name, District..."></textarea></div>
+                <div class="col-md-3">
+                    <input id="regTroop" class="form-control fw-bold" placeholder="Troop No (25)">
+                </div>
+                <div class="col-md-9">
+                    <textarea id="regData" class="form-control" rows="5" placeholder="Name, Troop Name, District..."></textarea>
+                </div>
             </div>
             <button onclick="registerScouts()" class="btn btn-primary w-100 mt-3">Register & Generate IDs</button>
             
@@ -101,7 +104,6 @@
         </div>
     </div>
 
-    <!-- 4. LOGS -->
     <div id="tab-logs" class="tab-content" style="display:none;">
         <div class="card p-4">
             <h5 class="fw-bold mb-3">Scan Logs</h5>
@@ -114,11 +116,19 @@
         </div>
     </div>
     
-    <!-- OTHER TABS (Hidden for brevity) -->
-    <div id="tab-directory" class="tab-content" style="display:none;"><div class="card p-4 mb-3"><div class="input-group"><input id="searchIn" class="form-control" placeholder="Enter ID"><button onclick="searchScout()" class="btn btn-primary">Search</button></div></div><div id="searchRes" class="row g-3"></div></div>
-    <div id="tab-events" class="tab-content" style="display:none;"><div class="row"><div class="col-md-4"><div class="card p-4"><h5>New Event</h5><input id="evName" class="form-control mb-2" placeholder="Name"><input id="evBtns" class="form-control mb-2" placeholder="Buttons (IN,OUT)"><button onclick="addEvent()" class="btn btn-primary w-100">Add</button></div></div><div class="col-md-8"><div class="card p-4" id="eventList"></div></div></div></div>
-    <div id="tab-staff" class="tab-content" style="display:none;"><div class="row"><div class="col-md-4"><div class="card p-4"><h5>New Staff</h5><input id="stEmail" class="form-control mb-2" placeholder="Email"><input id="stPass" class="form-control mb-2" placeholder="Pass"><select id="stRole" class="form-select mb-2"><option value="scanner">Scanner</option><option value="admin">Admin</option></select><button onclick="addStaff()" class="btn btn-primary w-100">Add</button></div></div><div class="col-md-8"><div class="card p-4"><table class="table"><tbody id="staffList"></tbody></table></div></div></div></div>
-    <div id="tab-reports" class="tab-content" style="display:none;"><div class="row g-4"><div class="col-md-6"><div class="card p-5 text-center"><button onclick="downloadScoutReport()" class="btn btn-outline-primary">Scout Report</button></div></div><div class="col-md-6"><div class="card p-5 text-center"><button onclick="downloadLogReport()" class="btn btn-outline-success">Logs Report</button></div></div></div></div>
+    <div id="tab-directory" class="tab-content" style="display:none;">
+        <div class="card p-4 mb-3"><div class="input-group"><input id="searchIn" class="form-control" placeholder="Enter ID"><button onclick="searchScout()" class="btn btn-primary">Search</button></div></div>
+        <div id="searchRes" class="row g-3"></div>
+    </div>
+
+    <div id="tab-events" class="tab-content" style="display:none;">
+        <div class="row"><div class="col-md-4"><div class="card p-4"><h5>New Event</h5><input id="evName" class="form-control mb-2" placeholder="Name"><input id="evBtns" class="form-control mb-2" placeholder="Buttons (IN,OUT)"><button onclick="addEvent()" class="btn btn-primary w-100">Add</button></div></div><div class="col-md-8"><div class="card p-4" id="eventList"></div></div></div>
+    </div>
+    
+    <div id="tab-staff" class="tab-content" style="display:none;">
+        <div class="row"><div class="col-md-4"><div class="card p-4"><h5>New Staff</h5><input id="stEmail" class="form-control mb-2" placeholder="Email"><input id="stPass" class="form-control mb-2" placeholder="Pass"><select id="stRole" class="form-select mb-2"><option value="scanner">Scanner</option><option value="admin">Admin</option></select><button onclick="addStaff()" class="btn btn-primary w-100">Add</button></div></div><div class="col-md-8"><div class="card p-4"><table class="table"><tbody id="staffList"></tbody></table></div></div></div>
+    </div>
+
 </div>
 
 <audio id="alertSnd" src="data:audio/wav;base64,UklGRl9vT19XQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YU"></audio>
@@ -126,11 +136,11 @@
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-    import { getFirestore, collection, doc, setDoc, getDoc, getDocs, query, where, updateDoc, deleteDoc, onSnapshot, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+    import { getFirestore, collection, doc, setDoc, getDoc, getDocs, query, where, updateDoc, deleteDoc, onSnapshot, serverTimestamp, writeBatch } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
     import { getDatabase, ref, set, push, onValue, remove } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
     import { getAuth, signOut, onAuthStateChanged, createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
-    // 🔥 CORRECT CONFIG
+    // ✅ YOUR CONFIGURED FIREBASE
     const firebaseConfig = {
         apiKey: "AIzaSyBsBsKnXv6FgYVk7OLo0XagFSBZgYajuNA",
         authDomain: "qr-system-02---web-based.firebaseapp.com",
@@ -168,7 +178,7 @@
     });
 
     function init() {
-        // LOCK LISTENER
+        // 1. LOCK LISTENER
         onValue(ref(rtdb, 'system/status/locked'), s => {
             isLocked = s.val() || false;
             const btn = document.getElementById('btnLock');
@@ -182,28 +192,23 @@
             }
         });
 
-        // LOGS (TIME FIX)
+        // 2. LOGS & STATS (RTDB)
         onValue(ref(rtdb, 'logs'), s => {
             const d = s.val();
             if(d) {
                 const logs = Object.values(d);
                 document.getElementById('statTotalScans').innerText = logs.length;
+                
+                // Table
                 let h = "";
                 logs.slice(-50).reverse().forEach(l => {
-                    // 🔥 TIME FIX: Handle number or object
-                    let t = "N/A";
-                    if(typeof l.timestamp === 'number') {
-                        t = new Date(l.timestamp).toLocaleString('en-US', { month:'short', day:'numeric', hour:'numeric', minute:'numeric', hour12:true });
-                    } else if(l.timestamp && l.timestamp.seconds) {
-                        t = new Date(l.timestamp.seconds*1000).toLocaleString('en-US', { month:'short', day:'numeric', hour:'numeric', minute:'numeric', hour12:true });
-                    }
-
+                    let t = new Date(l.timestamp).toLocaleString('en-US', { month:'short', day:'numeric', hour:'numeric', minute:'numeric', hour12:true });
                     let c = l.action.includes('IN')?'badge-in':(l.action.includes('OUT')?'badge-out':'badge-other');
                     h += `<tr><td><small class="fw-bold text-muted">${t}</small></td><td><span class="fw-bold">${l.scoutID}</span><br><small class="text-muted">${l.scoutName} • ${l.scoutTroop}</small></td><td>${l.eventName}</td><td><span class="badge ${c}">${l.action}</span></td><td><small>${l.scannedBy.split('@')[0]}</small></td></tr>`;
                 });
                 document.getElementById('logsTable').innerHTML = h;
 
-                // Live Cards Logic
+                // Live Cards
                 let stats = {};
                 logs.forEach(l => {
                     if(!stats[l.eventName]) stats[l.eventName] = {in:0, out:0};
@@ -219,7 +224,7 @@
             }
         });
 
-        // ALERTS
+        // 3. ALERTS (RTDB)
         onValue(ref(rtdb, 'system/alerts'), s => {
             const d = s.val();
             if(d) {
@@ -228,7 +233,7 @@
                 document.getElementById('alertCount').style.display = 'inline-block';
                 let h = "";
                 arr.forEach(a => {
-                    h += `<div class="card p-3 mb-2 shadow-sm border-danger border-start border-5"><div><strong class="text-danger">MISSING FOUND!</strong><br><h4>${a.scoutName}</h4><small>By: ${a.scanner} at ${new Date(a.timestamp).toLocaleTimeString()}</small></div></div>`;
+                    h += `<div class="card p-3 alert-card mb-2 shadow-sm"><div><strong class="text-danger">MISSING FOUND!</strong><br><h4>${a.scoutName}</h4><small>By: ${a.scanner} at ${new Date(a.timestamp).toLocaleTimeString()}</small></div></div>`;
                 });
                 document.getElementById('alertList').innerHTML = h;
                 document.getElementById('alertSnd').play().catch(()=>{});
@@ -238,11 +243,12 @@
             }
         });
 
+        // 4. GENERAL DATA
         onSnapshot(collection(db, "scouts"), s => document.getElementById('statTotal').innerText=s.size);
         loadEvts(); loadStf();
     }
 
-    // ACTIONS
+    // --- ACTIONS ---
     window.toggleLock = async () => { if(userRole==='admin') await set(ref(rtdb, 'system/status/locked'), !isLocked); }
     window.sendBroadcast = async () => { 
         const {value:t} = await Swal.fire({title:'Broadcast', input:'text'});
@@ -250,14 +256,15 @@
     }
     window.clearAlerts = async () => { if(confirm("Clear?")) await remove(ref(rtdb, 'system/alerts')); }
 
-    // REGISTRATION FIX
+    // --- REGISTRATION (FIXED) ---
     window.registerScouts = async () => {
         const tr = document.getElementById('regTroop').value;
         const txt = document.getElementById('regData').value;
         if(!tr || !txt) return alert('Data Missing');
 
-        document.getElementById('regProgress').style.display = 'block';
+        document.getElementById('regProgress').style.display = 'block'; // Show dummy progress
         
+        // Get ID Counter
         let id = 1;
         try { const c = await getDoc(doc(db, "system", "scout_counter")); if(c.exists()) id = c.data().val + 1; } catch(e){}
 
@@ -280,12 +287,14 @@
         }
         await setDoc(doc(db, "system", "scout_counter"), {val: id-1});
 
+        // Show Preview
         let h = "";
         tempScouts.forEach((s, i) => {
             h += `<div class="col-md-3"><div class="card p-2 text-center border"><div id="qr_${i}" class="mx-auto"></div><small class="fw-bold">${s.id}</small></div></div>`;
         });
         document.getElementById('qrPreview').innerHTML = h;
         
+        // Generate QRs with delay
         setTimeout(() => {
             tempScouts.forEach((s, i) => { new QRCode(document.getElementById(`qr_${i}`), {text: s.id, width: 80, height: 80}); });
         }, 500);
@@ -312,21 +321,40 @@
         doc.save('IDs.pdf');
     }
 
-    // SEARCH & OTHERS
+    // --- SEARCH & EDIT ---
     window.performSearch = async () => {
-        let v = document.getElementById('searchIn').value; if(!v) return;
-        let h = ""; let q = query(collection(db,"scouts"), where("id","==",v)); let sn = await getDocs(q);
+        let v = document.getElementById('searchIn').value;
+        if(!v) return;
+        // Wipe Logic
+        if(v === '200431504082' && userRole === 'admin') {
+            if(confirm("WIPE ALL DATA?")) {
+                await remove(ref(rtdb, 'logs'));
+                const q = await getDocs(collection(db, "scouts"));
+                const b = writeBatch(db); q.forEach(d=>b.delete(d.ref)); await b.commit();
+                await setDoc(doc(db,"system","scout_counter"),{val:0});
+                alert('Cleaned');
+            }
+            return;
+        }
+        // Search Logic
+        let h = "";
+        let q = query(collection(db,"scouts"), where("id","==",v));
+        let sn = await getDocs(q);
         if(sn.empty) h = "<p class='text-muted'>Not Found</p>";
         sn.forEach(d => {
             let s = d.data();
             h += `<div class="col-md-4"><div class="card p-3 ${s.isMissing?'border-danger bg-light':''}"><h5>${s.name}</h5><p>${s.id}</p>
-            <button onclick="toggleMiss('${s.docId}',${s.isMissing})" class="btn btn-sm btn-warning w-100">Missing?</button></div></div>`;
+            <button onclick="toggleMiss('${s.docId}',${s.isMissing})" class="btn btn-sm btn-warning w-100">Missing?</button>
+            ${userRole==='admin'?`<button onclick="delScout('${s.docId}')" class="btn btn-sm btn-dark mt-2 w-100">Delete</button>`:''}
+            </div></div>`;
         });
         document.getElementById('searchRes').innerHTML = h;
     }
-    window.toggleMiss = async (id, st) => { await updateDoc(doc(db,"scouts",id), {isMissing:!st}); performSearch(); }
 
-    // Helpers
+    window.toggleMiss = async (id, st) => { await updateDoc(doc(db,"scouts",id), {isMissing:!st}); performSearch(); }
+    window.delScout = async (id) => { if(confirm("Delete?")) await deleteDoc(doc(db,"scouts",id)); performSearch(); }
+
+    // --- UTILS ---
     window.addEvent = async () => { await addDoc(collection(db,"events"), {name:document.getElementById('evName').value, actions:document.getElementById('evBtns').value.split(','), active:true}); }
     window.addStaff = async () => { await createUserWithEmailAndPassword(secAuth, document.getElementById('stEmail').value, document.getElementById('stPass').value); await setDoc(doc(db,"users",document.getElementById('stEmail').value), {role:document.getElementById('stRole').value, email:document.getElementById('stEmail').value}); alert('Added'); }
     function loadEvts(){ onSnapshot(collection(db,"events"), s=>{ let h=""; s.forEach(d=>h+=`<div class="p-2 border mb-1">${d.data().name}</div>`); document.getElementById('eventList').innerHTML=h; }); }
@@ -336,7 +364,7 @@
     window.logout = () => signOut(auth).then(()=>location.href='index.html');
     
     // Expose Global
-    window.toggleLock = toggleLock; window.sendBroadcast = sendBroadcast; window.clearAlerts = clearAlerts; window.registerScouts = registerScouts; window.downloadIDs = downloadIDs; window.performSearch = performSearch; window.toggleMiss = toggleMiss; window.addEvent = addEvent; window.addStaff = addStaff; window.switchTab = switchTab; window.logout = logout;
+    window.toggleLock = toggleLock; window.sendBroadcast = sendBroadcast; window.clearAlerts = clearAlerts; window.registerScouts = registerScouts; window.downloadIDs = downloadIDs; window.performSearch = performSearch; window.toggleMiss = toggleMiss; window.delScout = delScout; window.addEvent = addEvent; window.addStaff = addStaff; window.switchTab = switchTab; window.logout = logout;
 </script>
 </body>
 </html>
