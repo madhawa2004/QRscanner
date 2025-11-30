@@ -14,11 +14,7 @@
         .screen { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: none; flex-direction: column; padding: 20px; overflow-y: auto; box-sizing: border-box; z-index: 1; }
         .screen.active { display: flex; }
         
-        /* Footer Style */
-        .footer-credit { 
-            text-align: center; font-size: 0.7rem; color: #aaa; padding: 10px; 
-            position: fixed; bottom: 0; left: 0; width: 100%; background: rgba(255,255,255,0.8); z-index: 1000;
-        }
+        .footer-credit { text-align: center; font-size: 0.7rem; color: #aaa; padding: 10px; position: fixed; bottom: 0; left: 0; width: 100%; background: rgba(255,255,255,0.9); z-index: 1000; border-top: 1px solid #eee; }
 
         /* Home UI */
         .header-text { text-align: center; color: #007bff; font-weight: 900; text-transform: uppercase; letter-spacing: 1px; margin: 20px 0; font-size: 1.5rem; }
@@ -26,14 +22,19 @@
         #reader { width: 100%; height: 100%; object-fit: cover; }
         #reader video { object-fit: cover; width: 100% !important; height: 100% !important; }
         .input-group-custom { background: #fff; padding: 20px; border-radius: 20px; margin-bottom: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
+        .form-label { font-size: 0.8rem; font-weight: 700; color: #6c757d; margin-bottom: 5px; }
         .form-control, .form-select { border: 1px solid #e9ecef; border-radius: 10px; padding: 12px; font-weight: 600; background: #f8f9fa; }
-        .btn-scan { width: 100%; background-color: #007bff; color: white; border: none; padding: 18px; font-size: 1.1rem; font-weight: 700; border-radius: 15px; letter-spacing: 1px; margin-top: auto; z-index: 10; }
+        .btn-scan { width: 100%; background-color: #007bff; color: white; border: none; padding: 18px; font-size: 1.1rem; font-weight: 700; border-radius: 15px; letter-spacing: 1px; margin-top: auto; z-index: 10; transition: 0.3s; }
         .btn-scan.stop { background-color: #dc3545; }
 
-        /* Action Buttons Styling */
-        .action-grid { display: grid; gap: 10px; margin-top: 15px; }
-        .btn-action-lg { width: 100%; padding: 15px; border-radius: 12px; font-weight: 700; font-size: 1.1rem; border: none; text-transform: uppercase; box-shadow: 0 4px 6px rgba(0,0,0,0.1); transition: 0.2s; }
-        .btn-action-lg:active { transform: scale(0.98); }
+        /* Action Buttons - Beautiful Grid */
+        .action-grid { display: grid; gap: 12px; margin-top: 15px; }
+        .btn-action-lg { 
+            width: 100%; padding: 18px; border-radius: 15px; font-weight: 800; font-size: 1rem; 
+            border: none; text-transform: uppercase; box-shadow: 0 5px 15px rgba(0,0,0,0.1); 
+            transition: transform 0.1s; display: flex; align-items: center; justify-content: center; gap: 10px;
+        }
+        .btn-action-lg:active { transform: scale(0.96); }
         .btn-in { background: linear-gradient(135deg, #2ecc71, #27ae60); color: white; }
         .btn-out { background: linear-gradient(135deg, #e74c3c, #c0392b); color: white; }
         .btn-other { background: linear-gradient(135deg, #3498db, #2980b9); color: white; }
@@ -53,9 +54,9 @@
         <div class="camera-box"><div id="reader"></div><i class="bi bi-camera-fill display-1 text-muted" id="camIcon" style="position:absolute;"></i></div>
         
         <div class="input-group-custom">
-            <div class="mb-3"><label class="form-label fw-bold text-muted small">CAMERA</label><select id="cameraSelect" class="form-select"><option value="">Auto Detect</option></select></div>
-            <div class="mb-3"><label class="form-label fw-bold text-muted small">EVENT</label><select id="eventSelect" class="form-select"><option value="">Loading...</option></select></div>
-            <div><label class="form-label fw-bold text-muted small">MANUAL ID</label><input type="text" id="manualInput" class="form-control" placeholder="Enter ID"></div>
+            <div class="mb-3"><label class="form-label">CAMERA</label><select id="cameraSelect" class="form-select"><option value="">Auto Detect</option></select></div>
+            <div class="mb-3"><label class="form-label">EVENT</label><select id="eventSelect" class="form-select"><option value="">Loading...</option></select></div>
+            <div><label class="form-label">MANUAL ID</label><input type="text" id="manualInput" class="form-control" placeholder="Enter ID"></div>
         </div>
 
         <button id="scanBtn" class="btn-scan" onclick="handleScanToggle()">SCAN</button>
@@ -188,15 +189,13 @@
                 document.getElementById('dID').innerText = currentScout.id;
                 document.getElementById('dTroop').innerText = currentScout.troop;
                 document.getElementById('dAvatar').innerText = currentScout.name.charAt(0);
-                
                 let con = document.getElementById('actionContainer'); con.innerHTML="";
                 let acts = selectedEvent.actions.length ? selectedEvent.actions : ['Mark Present'];
                 acts.forEach((a,i) => {
-                    // Stylized Buttons
                     let cls = 'btn-action-lg btn-other';
                     if(a.toUpperCase().includes('IN')) cls = 'btn-action-lg btn-in';
                     if(a.toUpperCase().includes('OUT')) cls = 'btn-action-lg btn-out';
-                    con.innerHTML += `<button onclick="submitLog('${a}')" class="${cls}">${a}</button>`;
+                    con.innerHTML += `<button onclick="submitLog('${a}')" class="${cls}"><i class="bi bi-check-circle-fill me-2"></i>${a}</button>`;
                 });
                 window.showScreen('screen-details');
             }
@@ -205,16 +204,17 @@
 
     window.submitLog = (action) => {
         Swal.showLoading();
+        // 🔥 TIME FIX: Use Date.now() to force a valid timestamp number
         push(ref(rtdb, 'logs'), {
             scoutID: currentScout.id, 
-            scoutName: currentScout.name, // Sending Name
-            scoutTroop: currentScout.troop, // Sending Troop
-            scoutDistrict: currentScout.district || '', // Sending District
+            scoutName: currentScout.name, 
+            scoutTroop: currentScout.troop, 
+            scoutDistrict: currentScout.district || '', 
             eventID: selectedEvent.id, 
             eventName: selectedEvent.name,
             action: action, 
             scannedBy: auth.currentUser.email, 
-            timestamp: serverTimestamp()
+            timestamp: Date.now() // Fixed!
         }).then(() => {
             Swal.close(); Swal.fire({icon:'success', title:'Saved', timer:1000, showConfirmButton:false});
             document.getElementById('manualInput').value=""; goHome();
@@ -237,7 +237,6 @@
 
     window.logout = () => signOut(auth).then(()=>window.location.href="index.html");
     
-    // Global Access
     window.handleScanToggle = handleScanToggle;
     window.goHome = goHome;
     window.submitLog = submitLog;
