@@ -10,7 +10,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <style>
         body{background:#f4f6f9;font-family:sans-serif;}
-        .sidebar{height:100vh;width:250px;position:fixed;background:#fff;padding-top:20px;border-right:1px solid #ddd;z-index:1000;}
+        .sidebar{height:100vh;width:250px;position:fixed;background:#fff;padding-top:20px;border-right:1px solid #ddd;}
         .main{margin-left:250px;padding:30px;}
         .nav-link{padding:12px 20px;color:#333;cursor:pointer;} .nav-link:hover,.nav-link.active{background:#eef2ff;color:#4f46e5;font-weight:bold;}
         .card{border:none;border-radius:15px;box-shadow:0 2px 10px rgba(0,0,0,0.05);background:#fff;}
@@ -120,14 +120,17 @@
             document.getElementById('btnLock').innerText = locked ? "SYSTEM LOCKED" : "System Active";
         });
 
-        // Logs
+        // Logs (Hybrid: RTDB)
         onValue(ref(rtdb,'logs'), s=>{
             const d=s.val(); if(!d) return;
             const l=Object.values(d);
             document.getElementById('totScan').innerText=l.length;
             let h="";
             l.slice(-50).reverse().forEach(x=>{
-                let t = new Date(x.timestamp).toLocaleTimeString();
+                // TIME FIX
+                let t = "N/A";
+                if(x.timestamp) t = new Date(x.timestamp).toLocaleTimeString();
+                
                 let c = x.action.includes('IN')?'badge-in':'badge-out';
                 h+=`<tr><td>${t}</td><td><b>${x.scoutID}</b><br><small>${x.scoutName}</small></td><td>${x.eventName}</td><td><span class="badge ${c}">${x.action}</span></td></tr>`;
             });
